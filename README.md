@@ -6,6 +6,14 @@ A Python CLI that wraps common Linux commands for both local and cloud files usi
 
 ```bash
 pip install -U cloudsh
+
+# Install for different cloud storage providers
+pip install -U cloudsh[gcs]  # Google Cloud Storage
+pip install -U cloudsh[aws]  # Amazon S3
+pip install -U cloudsh[azure]  # Azure Blob Storage
+
+# Install for all cloud storage providers
+pip install -U cloudsh[all]
 ```
 
 ## Usage
