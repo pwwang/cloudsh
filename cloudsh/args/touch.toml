@@ -1,0 +1,48 @@
+usage = "touch [OPTION]... FILE..."
+help = "Update file timestamps"
+description = """
+Update the access and modification times of each FILE to the current time.
+A FILE argument that does not exist is created empty, unless -c is supplied.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "+"
+help = "Files to touch"
+
+[[arguments]]
+flags = ["-a"]
+help = "Change only the access time"
+action = "store_true"
+
+[[arguments]]
+flags = ["-m"]
+help = "Change only the modification time"
+action = "store_true"
+
+[[arguments]]
+flags = ["-c", "--no-create"]
+help = "Do not create any files"
+action = "store_true"
+
+[[arguments]]
+flags = ["-d", "--date"]
+help = "Parse STRING and use it instead of current time"
+type = "str"
+
+[[arguments]]
+flags = ["-r", "--reference"]
+help = "Use this file's times instead of current time"
+type = "str"
+
+[[arguments]]
+flags = ["-t"]
+help = "Use [[CC]YY]MMDDhhmm[.ss] instead of current time"
+type = "str"
+
+[[arguments]]
+flags = ["--time"]
+choices = ["access", "atime", "use", "modify", "mtime"]
+help = "Change the specified time: access/atime/use='-a', modify/mtime='-m'"

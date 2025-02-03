@@ -1,0 +1,43 @@
+name = "rm"
+help = "Remove files or directories"
+description = """
+Remove (unlink) the FILE(s).
+By default, does not remove directories. Use --recursive (-r or -R) to remove directories.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "+"
+help = "File(s) to remove"
+
+[[arguments]]
+flags = ["-f", "--force"]
+help = "Ignore nonexistent files and arguments, never prompt"
+action = "store_true"
+
+[[arguments]]
+flags = ["-i"]
+help = "Prompt before every removal"
+action = "store_true"
+
+[[arguments]]
+flags = ["-I"]
+help = "Prompt once before removing more than three files or recursively"
+action = "store_true"
+
+[[arguments]]
+flags = ["-r", "-R", "--recursive"]
+help = "Remove directories and their contents recursively"
+action = "store_true"
+
+[[arguments]]
+flags = ["-d", "--dir"]
+help = "Remove empty directories"
+action = "store_true"
+
+[[arguments]]
+flags = ["-v", "--verbose"]
+help = "Explain what is being done"
+action = "store_true"

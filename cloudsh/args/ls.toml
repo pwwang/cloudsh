@@ -1,0 +1,64 @@
+usage = "cloudsh ls [OPTION]... [FILE]..."
+description = """
+List information about the FILEs (the current directory by default).
+Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["-a", "--all"]
+help = "do not ignore entries starting with ."
+action = "store_true"
+
+[[arguments]]
+flags = ["-A", "--almost-all"]
+help = "do not list implied . and .."
+action = "store_true"
+
+[[arguments]]
+flags = ["-l"]
+help = "use a long listing format"
+action = "store_true"
+
+[[arguments]]
+flags = ["-H", "--human-readable"]
+help = "with -l, print sizes like 1K 234M 2G etc."
+action = "store_true"
+
+[[arguments]]
+flags = ["--si"]
+help = "likewise, but use powers of 1000 not 1024"
+action = "store_true"
+
+[[arguments]]
+flags = ["-R", "--recursive"]
+help = "list subdirectories recursively"
+action = "store_true"
+
+[[arguments]]
+flags = ["-r", "--reverse"]
+help = "reverse order while sorting"
+action = "store_true"
+
+[[arguments]]
+flags = ["-S"]
+help = "sort by file size, largest first"
+action = "store_true"
+
+[[arguments]]
+flags = ["-t"]
+help = "sort by time, newest first"
+action = "store_true"
+
+[[arguments]]
+flags = ["-1"]
+dest = "one"
+help = "list one file per line"
+action = "store_true"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "*"
+default = []
+help = "files to list"

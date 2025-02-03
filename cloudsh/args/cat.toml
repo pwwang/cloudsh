@@ -1,0 +1,58 @@
+name = "cat"
+help = "Concatenate files and print on the standard output"
+description = """
+Concatenate FILE(s) to standard output.
+With no FILE, or when FILE is -, read standard input.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "*"
+help = "Files to concatenate (use - for stdin)"
+
+[[arguments]]
+flags = ["-A", "--show-all"]
+help = "equivalent to -vET"
+action = "store_true"
+
+[[arguments]]
+flags = ["-b", "--number-nonblank"]
+help = "number nonempty output lines, overrides -n"
+action = "store_true"
+
+[[arguments]]
+flags = ["-e"]
+help = "equivalent to -vE"
+action = "store_true"
+
+[[arguments]]
+flags = ["-E", "--show-ends"]
+help = "display $ at end of each line"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--number"]
+help = "number all output lines"
+action = "store_true"
+
+[[arguments]]
+flags = ["-s", "--squeeze-blank"]
+help = "suppress repeated empty output lines"
+action = "store_true"
+
+[[arguments]]
+flags = ["-t"]
+help = "equivalent to -vT"
+action = "store_true"
+
+[[arguments]]
+flags = ["-T", "--show-tabs"]
+help = "display TAB characters as ^I"
+action = "store_true"
+
+[[arguments]]
+flags = ["-v", "--show-nonprinting"]
+help = "use ^ and M- notation, except for LFD and TAB"
+action = "store_true"

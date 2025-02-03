@@ -1,0 +1,15 @@
+[run]
+branch = True
+parallel = True
+concurrency = multiprocessing
+source = cloudsh
+sigterm = true
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    pass
+    raise AssertionError

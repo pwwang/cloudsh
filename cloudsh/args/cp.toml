@@ -1,0 +1,62 @@
+name = "cp"
+help = "Copy files and directories"
+description = """
+Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.
+"""
+path_options = ["SOURCE", "DEST", "target_directory"]
+
+[[arguments]]
+flags = ["SOURCE"]
+metavar = "SOURCE"
+help = "Source file(s) to copy"
+nargs = "+"
+
+[[arguments]]
+flags = ["DEST"]
+metavar = "DEST"
+help = "Destination file or directory"
+
+[[arguments]]
+flags = ["-r", "-R", "--recursive"]
+help = "Copy directories recursively"
+action = "store_true"
+
+[[arguments]]
+flags = ["-i", "--interactive"]
+help = "Prompt before overwrite"
+action = "store_true"
+
+[[arguments]]
+flags = ["-f", "--force"]
+help = "Force overwrite of existing files"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--no-clobber"]
+help = "Do not overwrite existing files"
+action = "store_true"
+
+[[arguments]]
+flags = ["-v", "--verbose"]
+help = "Explain what is being done"
+action = "store_true"
+
+[[arguments]]
+flags = ["-p", "--preserve"]
+help = "Preserve mode, ownership, timestamps"
+action = "store_true"
+
+[[arguments]]
+flags = ["-t", "--target-directory"]
+help = "Copy all SOURCE arguments into DIRECTORY"
+metavar = "DIRECTORY"
+
+[[arguments]]
+flags = ["-T", "--no-target-directory"]
+help = "Treat DEST as a normal file"
+action = "store_true"
+
+[[arguments]]
+flags = ["--parents"]
+help = "Use full source file name under DIRECTORY"
+action = "store_true"

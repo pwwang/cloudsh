@@ -1,0 +1,27 @@
+name = "mkdir"
+help = "Create directories"
+description = """
+Create the DIRECTORY(ies), if they do not already exist.
+"""
+path_options = "directory"
+
+[[arguments]]
+flags = ["directory"]
+metavar = "DIRECTORY"
+nargs = "+"
+help = "Directory(ies) to create"
+
+[[arguments]]
+flags = ["-m", "--mode"]
+help = "Set file mode (as in chmod), not a=rwx - umask. Ignored for cloud directories."
+type = "str"
+
+[[arguments]]
+flags = ["-p", "--parents"]
+help = "No error if existing, make parent directories as needed"
+action = "store_true"
+
+[[arguments]]
+flags = ["-v", "--verbose"]
+help = "Print a message for each created directory"
+action = "store_true"

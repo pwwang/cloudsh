@@ -1,0 +1,34 @@
+name = "complete"
+help = "Generate shell completion"
+description = """
+Generate shell completion script for the specified shell (bash, fish or zsh).
+Or update/clear completion cache for given cloud paths.
+"""
+path_options = "path"
+
+[[arguments]]
+flags = ["-s", "--shell"]
+help = "Shell to generate completion for. Detected automatically if not specified."
+choices = ["bash", "fish", "zsh"]
+
+[[arguments]]
+flags = ["path"]
+metavar = "Path"
+help = "Cloud paths to generate completion for"
+nargs = "*"
+
+[[arguments]]
+flags = ["-d", "--depth"]
+help = "Depth of directories to scan for completion from the buckets. -1 means no limit."
+type = "int"
+default = -1
+
+[[arguments]]
+flags = ["--update-cache"]
+help = "Update completion cache for given buckets"
+action = "store_true"
+
+[[arguments]]
+flags = ["--clear-cache"]
+help = "Clear completion cache for given buckets"
+action = "store_true"

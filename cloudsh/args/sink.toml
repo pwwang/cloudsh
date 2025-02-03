@@ -1,0 +1,16 @@
+name = "sink"
+help = "Save piped data to a file"
+description = """
+Save data from stdin to a file, either local or cloud.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+help = "Target file path (local or cloud)"
+
+[[arguments]]
+flags = ["-a", "--append"]
+help = "Append to file instead of replacing"
+action = "store_true"

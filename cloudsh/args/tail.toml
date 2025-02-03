@@ -1,0 +1,85 @@
+usage = "cloudsh tail [OPTION]... [FILE]..."
+description = """
+Print the last 10 lines of each FILE to standard output.
+With more than one FILE, precede each with a header giving the file name.
+
+With no FILE, or when FILE is -, read standard input.
+"""
+epilog = """
+NUM may have a multiplier suffix:
+b 512, kB 1000, K 1024, MB 1000*1000, M 1024*1024,
+GB 1000*1000*1000, G 1024*1024*1024, and so on for T, P, E, Z, Y, R, Q.
+Binary prefixes can be used, too: KiB=K, MiB=M, and so on.
+For the orginal GNU tail documentation, see:
+https://www.gnu.org/software/coreutils/tail
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["-c", "--bytes"]
+metavar = "[+]NUM"
+help = "output the last NUM bytes; or use -c +NUM to output starting with byte NUM of each file"
+type = "str"
+
+[[arguments]]
+flags = ["-f", "--follow"]
+help = "output appended data as the file grows"
+action = "store_true"
+
+[[arguments]]
+flags = ["-F"]
+help = "same as --follow=name --retry"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--lines"]
+metavar = "[+]NUM"
+default = "10"
+help = "output the last NUM lines, instead of the last 10; or use -n +NUM to output starting with line NUM"
+type = "str"
+
+[[arguments]]
+flags = ["--max-unchanged-stats"]
+metavar = "N"
+help = "with --follow=name, reopen a FILE which has not changed size after N iterations"
+type = "str"
+
+[[arguments]]
+flags = ["--pid"]
+metavar = "PID"
+help = "with -f, terminate after process ID, PID dies"
+type = "str"
+
+[[arguments]]
+flags = ["-q", "--quiet", "--silent"]
+help = "never output headers giving file names"
+action = "store_true"
+
+[[arguments]]
+flags = ["--retry"]
+help = "keep trying to open a file if it is inaccessible"
+action = "store_true"
+
+[[arguments]]
+flags = ["-s", "--sleep-interval"]
+metavar = "N"
+help = "with -f, sleep for approximately N seconds between iterations"
+type = "str"
+
+[[arguments]]
+flags = ["-v", "--verbose"]
+help = "always output headers giving file names"
+action = "store_true"
+
+[[arguments]]
+flags = ["-z", "--zero-terminated"]
+help = "line delimiter is NUL, not newline"
+action = "store_true"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "*"
+default = []
+action = "extend"
+help = "the file to read"

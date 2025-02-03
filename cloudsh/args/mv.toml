@@ -1,0 +1,68 @@
+usage = """
+mv [OPTION]... [-T] SOURCE DEST
+mv [OPTION]... SOURCE... DIRECTORY
+mv [OPTION]... -t DIRECTORY SOURCE...
+"""
+help = "Move (rename) files"
+description = """
+Rename SOURCE to DEST, or move SOURCE(s) to DIRECTORY.
+"""
+path_options = ["SOURCE", "DEST", "target_directory"]
+
+[[arguments]]
+flags = ["SOURCE"]
+metavar = "SOURCE"
+nargs = "+"
+help = "Source file(s) to move"
+
+[[arguments]]
+flags = ["DEST"]
+metavar = "DEST"
+help = "Destination file or directory"
+
+[[arguments]]
+flags = ["-f", "--force"]
+help = "Do not prompt before overwriting"
+action = "store_true"
+
+[[arguments]]
+flags = ["-i", "--interactive"]
+help = "Prompt before overwrite"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--no-clobber"]
+help = "Do not overwrite an existing file"
+action = "store_true"
+
+[[arguments]]
+flags = ["-t", "--target-directory"]
+metavar = "DIRECTORY"
+help = "Move all SOURCE arguments into DIRECTORY"
+type = "str"
+
+[[arguments]]
+flags = ["-T", "--no-target-directory"]
+help = "Treat DEST as a normal file"
+action = "store_true"
+
+[[arguments]]
+flags = ["-v", "--verbose"]
+help = "Explain what is being done"
+action = "store_true"
+
+[[arguments]]
+flags = ["-u"]
+help = "equivalent to --update[=older]"
+action = "store_true"
+
+[[arguments]]
+flags = ["--update"]
+help = """Control which existing files are updated:
+'all' is default when --update not specified (replace all),
+'none' is like --no-clobber but skips don't cause failure,
+'older' is default when --update used (replace if older)"""
+choices = ["all", "none", "older"]
+default = "older"
+nargs = "?"
+const = "older"
