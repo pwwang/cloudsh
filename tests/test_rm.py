@@ -1,8 +1,6 @@
 import io
-import sys
 from argparse import Namespace
 from uuid import uuid4
-from pathlib import Path
 
 import pytest
 from cloudpathlib import AnyPath
@@ -52,9 +50,11 @@ class TestRm:
     def setup_input(self, monkeypatch):
         """Set up input mocking for interactive prompts"""
         self.input_response = "y"
+
         def mock_input(prompt):
             print(prompt, end="")  # Show prompt in test output
             return self.input_response
+
         monkeypatch.setattr("builtins.input", mock_input)
 
     def test_rm_single_file(self, cloud_file, capsys):
@@ -70,7 +70,7 @@ class TestRm:
         )
         run(args)
         assert not AnyPath(cloud_file).exists()
-        assert 'removed ' in capsys.readouterr().out
+        assert "removed " in capsys.readouterr().out
 
     def test_rm_missing_file(self, capsys):
         """Test removing a nonexistent file"""
@@ -238,7 +238,8 @@ class TestRm:
 
         captured = capsys.readouterr()
         assert (
-            "Directory not empty" in captured.err or "not empty" in captured.err.lower()
+            "Directory not empty" in captured.err
+            or "not empty" in captured.err.lower()
         )
         assert AnyPath(cloud_dir).exists()
 
@@ -293,7 +294,7 @@ class TestRm:
         )
         run(args)
         assert not path.exists()
-        assert 'removed' in capsys.readouterr().out
+        assert "removed" in capsys.readouterr().out
 
     def test_rm_local_dir_error(self, tmp_path, capsys):
         """Test removing local directory"""
@@ -313,7 +314,7 @@ class TestRm:
         with pytest.raises(SystemExit):
             run(args)
 
-        assert 'cannot remove' in capsys.readouterr().err
+        assert "cannot remove" in capsys.readouterr().err
 
     def test_rm_local_empty_dir(self, tmp_path, capsys):
         """Test removing empty local directory"""

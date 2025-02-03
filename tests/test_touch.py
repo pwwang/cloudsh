@@ -1,4 +1,3 @@
-import os
 import time
 from datetime import datetime, timedelta
 from argparse import Namespace
@@ -6,7 +5,6 @@ from uuid import uuid4
 
 import pytest
 from cloudpathlib import AnyPath
-from google.cloud.storage.blob import Blob
 
 from cloudsh.commands.touch import run
 from .conftest import BUCKET
@@ -35,8 +33,13 @@ class TestTouch:
         test_file = WORKDIR / "new_file.txt"
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=False, no_create=False,
-            date=None, reference=None, t=None, time=None
+            a=False,
+            m=False,
+            no_create=False,
+            date=None,
+            reference=None,
+            t=None,
+            time=None,
         )
         run(args)
         assert test_file.exists()
@@ -50,13 +53,20 @@ class TestTouch:
 
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=True, no_create=False,
-            date=None, reference=None, t=None, time=None
+            a=False,
+            m=True,
+            no_create=False,
+            date=None,
+            reference=None,
+            t=None,
+            time=None,
         )
         run(args)
 
         # Check metadata directly
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(test_file.blob)
+        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
+            test_file.blob
+        )
         updated = datetime.fromisoformat(blob.metadata["updated"])
         assert updated.timestamp() > original_mtime
 
@@ -68,15 +78,22 @@ class TestTouch:
         # Create reference file with known time
         ref_time = datetime.now() - timedelta(hours=1)
         ref_file.write_text("ref")
-        ref_blob = ref_file.client.client.bucket(ref_file.bucket).get_blob(ref_file.blob)
+        ref_blob = ref_file.client.client.bucket(ref_file.bucket).get_blob(
+            ref_file.blob
+        )
         metadata = ref_blob.metadata or {}
         metadata["updated"] = ref_time
         ref_blob.metadata = metadata
         ref_blob.patch()
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=False, no_create=False,
-            date=None, reference=str(ref_file), t=None, time=None
+            a=False,
+            m=False,
+            no_create=False,
+            date=None,
+            reference=str(ref_file),
+            t=None,
+            time=None,
         )
         run(args)
         assert abs((test_file.stat().st_mtime - ref_time.timestamp())) < 1
@@ -89,12 +106,19 @@ class TestTouch:
 
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=False, no_create=False,
-            date=test_date, reference=None, t=None, time=None
+            a=False,
+            m=False,
+            no_create=False,
+            date=test_date,
+            reference=None,
+            t=None,
+            time=None,
         )
         run(args)
 
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(test_file.blob)
+        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
+            test_file.blob
+        )
         updated = datetime.fromisoformat(blob.metadata["updated"])
         assert abs((updated - expected_time).total_seconds()) < 1
 
@@ -111,12 +135,19 @@ class TestTouch:
             test_file = WORKDIR / f"time_{t_value}.txt"
             args = Namespace(
                 file=[str(test_file)],
-                a=False, m=False, no_create=False,
-                date=None, reference=None, t=t_value, time=None
+                a=False,
+                m=False,
+                no_create=False,
+                date=None,
+                reference=None,
+                t=t_value,
+                time=None,
             )
             run(args)
 
-            blob = test_file.client.client.bucket(test_file.bucket).get_blob(test_file.blob)
+            blob = test_file.client.client.bucket(test_file.bucket).get_blob(
+                test_file.blob
+            )
             updated = datetime.fromisoformat(blob.metadata["updated"])
             expected_dt = datetime.fromisoformat(expected)
             assert abs((updated - expected_dt).total_seconds()) < 1
@@ -131,12 +162,19 @@ class TestTouch:
         # Test modify time
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=False, no_create=False,
-            date=None, reference=None, t=None, time="modify"
+            a=False,
+            m=False,
+            no_create=False,
+            date=None,
+            reference=None,
+            t=None,
+            time="modify",
         )
         run(args)
 
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(test_file.blob)
+        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
+            test_file.blob
+        )
         updated = datetime.fromisoformat(blob.metadata["updated"])
         assert updated.timestamp() > old_stat.st_mtime
 
@@ -191,8 +229,13 @@ class TestTouch:
         test_file = WORKDIR / "invalid_time.txt"
         args = Namespace(
             file=[str(test_file)],
-            a=False, m=False, no_create=False,
-            date=None, reference=None, t="invalid", time=None
+            a=False,
+            m=False,
+            no_create=False,
+            date=None,
+            reference=None,
+            t="invalid",
+            time=None,
         )
         with pytest.raises(SystemExit):
             run(args)

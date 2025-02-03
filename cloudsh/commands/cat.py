@@ -1,4 +1,5 @@
 """Implementation of GNU cat command for both local and cloud files."""
+
 from __future__ import annotations
 
 import sys
@@ -8,6 +9,7 @@ from cloudpathlib import AnyPath
 
 if TYPE_CHECKING:
     from argx import Namespace
+
 
 def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
     """Process a file according to cat options.
@@ -64,6 +66,7 @@ def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
                 line = line[:-1] + b"$\n"
 
         yield line
+
 
 def run(args: Namespace) -> None:
     """Execute the cat command.

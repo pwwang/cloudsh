@@ -1,5 +1,3 @@
-import io
-import sys
 from argparse import Namespace
 from uuid import uuid4
 
@@ -13,20 +11,25 @@ from .conftest import BUCKET
 # Create workdir as module-level variable
 WORKDIR = None
 
+
 def setup_module():
     """Create test directory before any tests run"""
     global WORKDIR
     WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
+
 
 def teardown_module():
     """Remove test directory after all tests complete"""
     if WORKDIR is not None:
         WORKDIR.rmtree()
 
+
 class MockStdin:
     """Mock stdin with buffer attribute"""
+
     def __init__(self, content: bytes):
         self.buffer = BytesIO(content)
+
 
 class TestCat:
     """Test cat command functionality"""
@@ -43,7 +46,7 @@ class TestCat:
         """Create a file with special characters"""
         path = WORKDIR / "special.txt"
         # Include tab, non-printing chars, and extended ASCII
-        content = "normal\ttext\x01\x02\x7F\x80line\n"
+        content = "normal\ttext\x01\x02\x7f\x80line\n"
         path.write_bytes(content.encode())
         return str(path)
 
@@ -226,12 +229,12 @@ class TestCat:
         captured = capsys.readouterr()
         assert "^I" in captured.out  # Tabs
         assert "^A" in captured.out  # Control chars
-        assert "$" in captured.out   # Line endings
+        assert "$" in captured.out  # Line endings
 
     def test_cat_stdin(self, capsys, monkeypatch):
         """Test reading from stdin"""
         mock_stdin = MockStdin(b"from stdin\n")
-        monkeypatch.setattr('sys.stdin', mock_stdin)
+        monkeypatch.setattr("sys.stdin", mock_stdin)
         args = Namespace(
             file=[],  # Empty file list -> use stdin
             show_all=False,
@@ -270,12 +273,13 @@ class TestCat:
 
     def test_cat_broken_pipe(self, basic_file, monkeypatch):
         """Test handling of broken pipe"""
+
         def raise_broken_pipe(*args, **kwargs):
             raise BrokenPipeError()
 
-        monkeypatch.setattr('sys.stdout.buffer.write', raise_broken_pipe)
+        monkeypatch.setattr("sys.stdout.buffer.write", raise_broken_pipe)
         # Also patch stderr.close to avoid actual close
-        monkeypatch.setattr('sys.stderr.close', lambda: None)
+        monkeypatch.setattr("sys.stderr.close", lambda: None)
         args = Namespace(
             file=[basic_file],
             show_all=False,
@@ -294,10 +298,11 @@ class TestCat:
 
     def test_cat_keyboard_interrupt(self, basic_file, monkeypatch):
         """Test handling of keyboard interrupt"""
+
         def raise_keyboard_interrupt(*args, **kwargs):
             raise KeyboardInterrupt()
 
-        monkeypatch.setattr('sys.stdout.buffer.write', raise_keyboard_interrupt)
+        monkeypatch.setattr("sys.stdout.buffer.write", raise_keyboard_interrupt)
         args = Namespace(
             file=[basic_file],
             show_all=False,

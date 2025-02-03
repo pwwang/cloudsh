@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 from cloudpathlib import AnyPath, CloudPath
-from google.api_core.exceptions import BadRequest
 
 from ..utils import PACKAGE
 

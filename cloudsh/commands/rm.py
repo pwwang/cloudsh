@@ -46,29 +46,32 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
                     elif args.dir:
                         # For cloud paths, attempt to list directory contents
                         try:
-                            a = next(path.iterdir())
+                            next(path.iterdir())
                             if not args.force:
                                 sys.stderr.write(
-                                    f"{PACKAGE} rm: cannot remove '{path}': Directory not empty\n"
+                                    f"{PACKAGE} rm: cannot remove '{path}': "
+                                    "Directory not empty\n"
                                 )
                                 return False
                         except StopIteration:
                             # Directory is empty, safe to remove
-                            path.rmtree()  # Use rmtree as some cloud providers don't have rmdir
+                            path.rmtree()
                             if args.verbose:
                                 print(f"removed directory '{path}'")
                             return True
                     else:
                         if not args.force:
                             sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': Is a directory\n"
+                                f"{PACKAGE} rm: cannot remove '{path}': "
+                                "Is a directory\n"
                             )
                         return False
                 else:
                     if not path.exists():
                         if not args.force:
                             sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': No such file or directory\n"
+                                f"{PACKAGE} rm: cannot remove '{path}': "
+                                "No such file or directory\n"
                             )
                             return False
                         return True
@@ -79,7 +82,8 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
             except FileNotFoundError:  # pragma: no cover
                 if not args.force:
                     sys.stderr.write(
-                        f"{PACKAGE} rm: cannot remove '{path}': No such file or directory\n"
+                        f"{PACKAGE} rm: cannot remove '{path}': "
+                        "No such file or directory\n"
                     )
                 return args.force
 
@@ -94,7 +98,8 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
                     else:
                         if not args.force:
                             sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': Is a directory\n"
+                                f"{PACKAGE} rm: cannot remove '{path}': "
+                                "Is a directory\n"
                             )
                         return False
                 else:
@@ -106,7 +111,8 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
             except FileNotFoundError:  # pragma: no cover
                 if not args.force:
                     sys.stderr.write(
-                        f"{PACKAGE} rm: cannot remove '{path}': No such file or directory\n"
+                        f"{PACKAGE} rm: cannot remove '{path}': "
+                        "No such file or directory\n"
                     )
                 return args.force
 

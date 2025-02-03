@@ -1,4 +1,3 @@
-import io
 import os
 import signal
 import sys
@@ -6,14 +5,11 @@ import time
 from argparse import Namespace
 from uuid import uuid4
 import subprocess
-import threading
-from threading import Event
 
 import pytest
 from cloudpathlib import AnyPath
 
 from cloudsh.commands.tail import run, _print_header
-from cloudsh.utils import PACKAGE
 
 from .conftest import BUCKET
 
@@ -24,18 +20,22 @@ from unittest.mock import patch
 # Create workdir as a module-level variable
 WORKDIR = None
 
+
 def setup_module():
     """Create test directory before any tests run"""
     global WORKDIR
     WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
+
 
 def teardown_module():
     """Remove test directory after all tests complete"""
     if WORKDIR is not None:
         WORKDIR.rmtree()
 
+
 class TailTester:
     """Helper class to run tail command in a separate process"""
+
     def __init__(self, tmp_path: Path):
         self.process = None
         self.output_file = tmp_path / "tail_output.txt"
@@ -72,7 +72,7 @@ class TailTester:
                     os.dup2(stderr_fd, sys.stderr.fileno())
                     os.close(stdout_fd)
                     os.close(stderr_fd)
-            except:
+            except Exception:
                 pass
 
         self.process = multiprocessing.Process(target=_run)
@@ -99,7 +99,9 @@ class TailTester:
                 # Handle file access errors gracefully
                 time.sleep(0.1)
                 continue
-        raise TimeoutError(f"Expected content '{expected}' not found within {timeout}s")
+        raise TimeoutError(
+            f"Expected content '{expected}' not found within {timeout}s"
+        )
 
     def stop(self):
         """Stop tail process and collect output"""
@@ -120,6 +122,7 @@ class TailTester:
             pass  # Ignore errors during cleanup
         return output
 
+
 @pytest.fixture
 def tail_tester(tmp_path):
     """Fixture to provide TailTester instance"""
@@ -127,12 +130,14 @@ def tail_tester(tmp_path):
     yield tester
     tester.stop()
 
+
 @pytest.fixture
 def cloud_file():
     """Create a test file in cloud storage"""
     path = WORKDIR / "test.txt"
     path.write_bytes(b"cloud1\ncloud2\ncloud3\ncloud4\ncloud5\n")
     return str(path)
+
 
 @pytest.fixture
 def growing_file():
@@ -142,6 +147,7 @@ def growing_file():
         path._local.unlink()
     path.write_bytes(b"line1\n")
     return str(path)
+
 
 class TestTail:
     """Group tail tests to share fixtures and avoid global state issues"""
@@ -319,13 +325,11 @@ class TestTail:
 
     def test_tail_pid_monitoring(self, capsys, monkeypatch):
         """Test PID monitoring with stdin"""
+
         def mock_run(*args, **kwargs):
             # Simulate GNU tail behavior
             return subprocess.CompletedProcess(
-                args=args[0],
-                returncode=0,
-                stdout="some output\n",
-                stderr=""
+                args=args[0], returncode=0, stdout="some output\n", stderr=""
             )
 
         monkeypatch.setattr(subprocess, "run", mock_run)
@@ -563,7 +567,7 @@ class TestTail:
         time.sleep(0.5)
 
         # Simulate stat error by patching stat method
-        with patch.object(error_file, 'stat', side_effect=raise_error):
+        with patch.object(error_file, "stat", side_effect=raise_error):
             time.sleep(0.2)  # Give time for stat error to occur
 
         # Write new content after error
@@ -648,14 +652,12 @@ class TestTail:
 
     def test_tail_no_file(self, capsys, monkeypatch):
         """Test tail behavior when no file is passed (should use stdin)"""
+
         def mock_run(*args, **kwargs):
             # Verify that tail is called with stdin (-)
             assert args[0][-1] == "-"
             return subprocess.CompletedProcess(
-                args=args[0],
-                returncode=0,
-                stdout="content from stdin\n",
-                stderr=""
+                args=args[0], returncode=0, stdout="content from stdin\n", stderr=""
             )
 
         monkeypatch.setattr(subprocess, "run", mock_run)

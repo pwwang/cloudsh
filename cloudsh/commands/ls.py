@@ -93,7 +93,9 @@ def _format_time(mtime: float) -> str:
     return datetime_obj.strftime("%b %d %H:%M")
 
 
-def _format_entry_long(path: Union[CloudPath, Path], human_readable: bool, si: bool) -> str:
+def _format_entry_long(
+    path: Union[CloudPath, Path], human_readable: bool, si: bool
+) -> str:
     """Format a single entry in long listing format."""
     try:
         st = path.stat()
@@ -108,7 +110,7 @@ def _format_entry_long(path: Union[CloudPath, Path], human_readable: bool, si: b
         # Try to get actual values
         try:
             size = st.st_size
-            mtime = getattr(st, 'st_mtime', time.time())
+            mtime = getattr(st, "st_mtime", time.time())
         except AttributeError:
             pass
 
@@ -118,12 +120,11 @@ def _format_entry_long(path: Union[CloudPath, Path], human_readable: bool, si: b
                 mode_str = "d" + "-" * 9
         else:
             try:
-                mode = getattr(st, 'st_mode', None)
+                mode = getattr(st, "st_mode", None)
                 if mode is not None:
                     mode_str = _format_mode(mode)
                     user, group = _get_user_group(
-                        getattr(st, 'st_uid', None),
-                        getattr(st, 'st_gid', None)
+                        getattr(st, "st_uid", None), getattr(st, "st_gid", None)
                     )
             except AttributeError:
                 pass
@@ -132,7 +133,10 @@ def _format_entry_long(path: Union[CloudPath, Path], human_readable: bool, si: b
         size_str = _format_size(size, human_readable, si)
         time_str = _format_time(mtime)
 
-        return f"{mode_str} {nlink:3d} {user:8} {group:8} {size_str:>8} {time_str} {path.name}"
+        return (
+            f"{mode_str} {nlink:3d} {user:8} {group:8} "
+            f"{size_str:>8} {time_str} {path.name}"
+        )
 
     except (OSError, NoStatError) as e:
         print(f"{PACKAGE} ls: cannot access '{path}': {str(e)}", file=sys.stderr)
@@ -154,7 +158,10 @@ def _list_entries(
     """List directory entries with specified options."""
     try:
         if not path.exists():
-            print(f"{PACKAGE} ls: cannot access '{path}': No such file or directory", file=sys.stderr)
+            print(
+                f"{PACKAGE} ls: cannot access '{path}': No such file or directory",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         if path.is_file():
@@ -177,13 +184,12 @@ def _list_entries(
         # Sort entries based on criteria
         if size_sort:
             entry_objects.sort(
-                key=lambda x: getattr(x.stat(), 'st_size', 0),
-                reverse=True  # -S always sorts largest first
+                key=lambda x: getattr(x.stat(), "st_size", 0),
+                reverse=True,  # -S always sorts largest first
             )
         elif time_sort:
             entry_objects.sort(
-                key=lambda x: getattr(x.stat(), 'st_mtime', 0),
-                reverse=True
+                key=lambda x: getattr(x.stat(), "st_mtime", 0), reverse=True
             )
         else:
             entry_objects.sort(key=lambda x: x.name, reverse=reverse)

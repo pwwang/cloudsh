@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import sys
 import shutil
 from typing import TYPE_CHECKING
@@ -56,7 +55,8 @@ def _copy_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
             args.force = True
             if dst.is_dir() and not src.is_dir():
                 print(
-                    f"{PACKAGE} cp: cannot overwrite directory '{dst}' with non-directory",
+                    f"{PACKAGE} cp: cannot overwrite directory '{dst}' "
+                    "with non-directory",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -154,7 +154,8 @@ def run(args: Namespace) -> None:
             and args.parents
         ):
             print(
-                f"{PACKAGE} cp: cannot preserve directory structure when copying between cloud paths",
+                f"{PACKAGE} cp: cannot preserve directory structure when copying "
+                "between cloud paths",
                 file=sys.stderr,
             )
             sys.exit(1)

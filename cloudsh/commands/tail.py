@@ -77,7 +77,9 @@ def _check_args(args: Namespace) -> Namespace:
             # Just validate the number format
             parse_number(args.bytes[1:] if args.bytes.startswith("+") else args.bytes)
         except ValueError as e:
-            print(f"{PACKAGE} tail: invalid number of bytes: {str(e)}", file=sys.stderr)
+            print(
+                f"{PACKAGE} tail: invalid number of bytes: {str(e)}", file=sys.stderr
+            )
             sys.exit(1)
 
     if args.lines is not None:
@@ -89,7 +91,9 @@ def _check_args(args: Namespace) -> Namespace:
                 else str(args.lines)
             )
         except ValueError as e:
-            print(f"{PACKAGE} tail: invalid number of lines: {str(e)}", file=sys.stderr)
+            print(
+                f"{PACKAGE} tail: invalid number of lines: {str(e)}", file=sys.stderr
+            )
             sys.exit(1)
 
     # Default to stdin if no files specified
@@ -150,7 +154,9 @@ def _tail_cloud_file(
     # Handle line counts
     delim = b"\0" if args.zero_terminated else b"\n"
     start_at_begin = str(args.lines).startswith("+")
-    num_lines = parse_number(str(args.lines)[1:] if start_at_begin else str(args.lines))
+    num_lines = parse_number(
+        str(args.lines)[1:] if start_at_begin else str(args.lines)
+    )
 
     if start_at_begin:
         # Output starting from line num_lines
@@ -392,7 +398,8 @@ def run(args: Namespace) -> None:
                         if not path.exists():
                             if not args.retry:
                                 print(
-                                    f"{PACKAGE} tail: {file}: No such file or directory",
+                                    f"{PACKAGE} tail: {file}: "
+                                    "No such file or directory",
                                     file=sys.stderr,
                                 )
                                 sys.exit(1)
@@ -416,7 +423,8 @@ def run(args: Namespace) -> None:
                         if not path.exists():
                             if not args.retry:
                                 print(
-                                    f"{PACKAGE} tail: {file}: No such file or directory",
+                                    f"{PACKAGE} tail: {file}: "
+                                    "No such file or directory",
                                     file=sys.stderr,
                                 )
                                 sys.exit(1)

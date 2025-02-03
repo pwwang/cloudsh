@@ -1,4 +1,5 @@
 """Patch cloudpathlib to support mkdir for GSPath"""
+
 from __future__ import annotations
 
 import os
@@ -55,9 +56,7 @@ class GSPath(_GSPath):
         """
         if self.exists():
             if not exist_ok:
-                raise FileExistsError(
-                    f"cannot create directory '{self}': File exists"
-                )
+                raise FileExistsError(f"cannot create directory '{self}': File exists")
             if not self.is_dir():
                 raise NotADirectoryError(
                     f"cannot create directory '{self}': Not a directory"
@@ -85,8 +84,7 @@ class GSPath(_GSPath):
         return False
 
     def iterdir(self) -> Generator[Self, None, None]:
-        """Iterate over the directory entries
-        """
+        """Iterate over the directory entries"""
         for f, _ in self.client._list_dir(self, recursive=False):
             if self == f:
                 # originally f == self used, which cannot detect
@@ -96,8 +94,7 @@ class GSPath(_GSPath):
             yield f
 
     def stat(self) -> os.stat_result:
-        """Return the stat result for the path
-        """
+        """Return the stat result for the path"""
         meta = self.client._get_metadata(self)
 
         # check if there is updated in the real metadata

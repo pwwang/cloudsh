@@ -33,8 +33,8 @@ def _parse_timestamp(args: Namespace) -> tuple[float | None, float | None]:
         try:
             # Parse [[CC]YY]MMDDhhmm[.ss] format
             fmt = args.t
-            if '.' in fmt:
-                fmt, ss = fmt.split('.')
+            if "." in fmt:
+                fmt, ss = fmt.split(".")
             else:
                 ss = "00"
 
@@ -92,10 +92,13 @@ def run(args: Namespace) -> None:
                     path.touch()
                 if atime is not None or mtime is not None:
                     current = path.stat()
-                    os.utime(path, (
-                        atime if atime is not None else current.st_atime,
-                        mtime if mtime is not None else current.st_mtime
-                    ))
+                    os.utime(
+                        path,
+                        (
+                            atime if atime is not None else current.st_atime,
+                            mtime if mtime is not None else current.st_mtime,
+                        ),
+                    )
 
         except Exception as e:
             sys.stderr.write(f"{PACKAGE} touch: cannot touch '{file}': {str(e)}\n")

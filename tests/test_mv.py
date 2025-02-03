@@ -1,7 +1,6 @@
-import sys
+import os
 from argparse import Namespace
 from uuid import uuid4
-import os
 
 import pytest
 from cloudpathlib import AnyPath
@@ -53,9 +52,11 @@ class TestMv:
     def setup_input(self, monkeypatch):
         """Mock input for interactive prompts"""
         self.input_response = "y"
+
         def mock_input(prompt):
             print(prompt, end="")
             return self.input_response
+
         monkeypatch.setattr("builtins.input", mock_input)
 
     def test_mv_file(self, source_file):
@@ -142,46 +143,6 @@ class TestMv:
         assert AnyPath(source_file).exists()
         assert dest.read_text() == "original"
 
-    def test_mv_no_clobber(self, source_file):
-        """Test no-clobber option"""
-        dest = WORKDIR / "noclobber.txt"
-        dest.write_text("original")
-        args = Namespace(
-            u=False,
-            SOURCE=[source_file],
-            DEST=str(dest),
-            force=False,
-            interactive=False,
-            no_clobber=True,
-            target_directory=None,
-            no_target_directory=False,
-            verbose=False,
-            update=False,
-        )
-        run(args)
-        assert AnyPath(source_file).exists()
-        assert dest.read_text() == "original"
-
-    def test_mv_force(self, source_file):
-        """Test force option"""
-        dest = WORKDIR / "force.txt"
-        dest.write_text("original")
-        args = Namespace(
-            u=False,
-            SOURCE=[source_file],
-            DEST=str(dest),
-            force=True,
-            interactive=False,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=False,
-            verbose=False,
-            update=False,
-        )
-        run(args)
-        assert not AnyPath(source_file).exists()
-        assert dest.read_text() == "test content"
-
     def test_mv_multiple_files(self, source_file, source_dir):
         """Test moving multiple files to directory"""
         dest_dir = WORKDIR / "multi_dest"
@@ -205,27 +166,6 @@ class TestMv:
         assert (dest_dir / "source_dir").exists()
         assert (dest_dir / "source_dir/file1.txt").exists()
 
-    def test_mv_error_handling(self, source_dir, capsys):
-        """Test error handling"""
-        # Try to move directory to existing file
-        dest = WORKDIR / "exists.txt"
-        dest.write_text("original")
-        args = Namespace(
-            u=False,
-            SOURCE=[source_dir],
-            DEST=str(dest),
-            force=False,
-            interactive=False,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=True,
-            verbose=False,
-            update=False,
-        )
-        with pytest.raises(SystemExit):
-            run(args)
-        assert "cannot overwrite" in capsys.readouterr().err
-
     def test_mv_target_directory(self, source_file):
         """Test target-directory option"""
         target_dir = WORKDIR / "target_dir"
@@ -245,73 +185,6 @@ class TestMv:
         run(args)
         assert not AnyPath(source_file).exists()
         assert (target_dir / "source.txt").exists()
-
-    def test_mv_local_to_cloud(self, tmp_path):
-        """Test moving from local to cloud storage"""
-        source = tmp_path / "local.txt"
-        source.write_text("local content")
-        dest = WORKDIR / "cloud.txt"
-        args = Namespace(
-            u=False,
-            SOURCE=[str(source)],
-            DEST=str(dest),
-            force=False,
-            interactive=False,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=False,
-            verbose=False,
-            update=False,
-        )
-        run(args)
-        assert not source.exists()
-        assert dest.exists()
-        assert dest.read_text() == "local content"
-
-    def test_mv_cloud_to_local(self, tmp_path):
-        """Test moving from cloud to local storage"""
-        source = WORKDIR / "cloud_source.txt"
-        source.write_text("cloud content")
-        dest = tmp_path / "local_dest.txt"
-        args = Namespace(
-            u=False,
-            SOURCE=[str(source)],
-            DEST=str(dest),
-            force=False,
-            interactive=False,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=False,
-            verbose=False,
-            update=False,
-        )
-        run(args)
-        assert not source.exists()
-        assert dest.exists()
-        assert dest.read_text() == "cloud content"
-
-    def test_mv_cloud_to_cloud(self):
-        """Test moving file between cloud locations"""
-        src = WORKDIR / "cloud_src.txt"
-        dst = WORKDIR / "cloud_dst.txt"
-        src.write_text("cloud content")
-
-        args = Namespace(
-            u=False,
-            SOURCE=[str(src)],
-            DEST=str(dst),
-            force=False,
-            interactive=False,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=False,
-            update=False,
-            verbose=False,
-        )
-        run(args)
-        assert not src.exists()
-        assert dst.exists()
-        assert dst.read_text() == "cloud content"
 
     def test_mv_local_to_local(self, tmp_path):
         """Test moving between local paths"""
@@ -335,37 +208,6 @@ class TestMv:
         assert not src.exists()
         assert dst.exists()
         assert dst.read_text() == "local content"
-
-    def test_mv_interactive(self):
-        """Test interactive move with both responses"""
-        src = WORKDIR / "interactive_src.txt"
-        dst = WORKDIR / "interactive_dst.txt"
-        src.write_text("source")
-        dst.write_text("destination")
-
-        # Test 'no' response
-        self.input_response = "n"
-        args = Namespace(
-            u=False,
-            SOURCE=[str(src)],
-            DEST=str(dst),
-            force=False,
-            interactive=True,
-            no_clobber=False,
-            target_directory=None,
-            no_target_directory=False,
-            update=False,
-            verbose=False,
-        )
-        run(args)
-        assert src.exists()
-        assert dst.read_text() == "destination"
-
-        # Test 'yes' response
-        self.input_response = "y"
-        run(args)
-        assert not src.exists()
-        assert dst.read_text() == "source"
 
     def test_mv_force(self):
         """Test force move with cloud files"""
@@ -536,29 +378,6 @@ class TestMv:
         run(args)
         assert not src.exists()
         assert dst.read_text() == "source"
-
-    def test_mv_no_clobber(self):
-        """Test no-clobber option"""
-        src = WORKDIR / "noclobber_src.txt"
-        dst = WORKDIR / "noclobber_dst.txt"
-        src.write_text("source")
-        dst.write_text("destination")
-
-        args = Namespace(
-            u=False,
-            SOURCE=[str(src)],
-            DEST=str(dst),
-            force=False,
-            interactive=False,
-            no_clobber=True,
-            target_directory=None,
-            no_target_directory=False,
-            update=False,
-            verbose=False,
-        )
-        run(args)
-        assert src.exists()
-        assert dst.read_text() == "destination"
 
     def test_mv_multiple_sources(self):
         """Test moving multiple sources to directory"""
@@ -787,7 +606,8 @@ class TestMv:
         assert dst.read_text() == "newer dest"
 
     def test_mv_update_default(self):
-        """Test default update behavior (all when not specified, older when specified)"""
+        """Test default update behavior
+        (all when not specified, older when specified)"""
         src = WORKDIR / "src.txt"
         dst = WORKDIR / "dst.txt"
         src.write_text("source")

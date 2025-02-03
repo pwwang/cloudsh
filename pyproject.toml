@@ -44,3 +44,8 @@ filterwarnings = [
 ]
 console_output_style = "progress"
 junit_family = "xunit1"
+
+[tool.black]
+line-length = 87
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'

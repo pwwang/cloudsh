@@ -1,8 +1,7 @@
-import sys
+import pytest
 from argparse import Namespace
 from uuid import uuid4
 
-import pytest
 from cloudpathlib import AnyPath
 
 from cloudsh.commands.cp import run

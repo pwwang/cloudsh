@@ -1,4 +1,3 @@
-import os
 import sys
 from argparse import Namespace
 from uuid import uuid4
@@ -32,10 +31,7 @@ class TestMkdir:
         """Test basic directory creation"""
         test_dir = WORKDIR / "test_dir"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=False,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=False, mode=None, verbose=False
         )
         run(args)
         assert test_dir.exists()
@@ -45,10 +41,7 @@ class TestMkdir:
         """Test creating directory with parents"""
         test_dir = WORKDIR / "parent/child/grandchild"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=True,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=True, mode=None, verbose=False
         )
         run(args)
         assert test_dir.exists()
@@ -60,10 +53,7 @@ class TestMkdir:
         """Test creating multiple directories"""
         dirs = [WORKDIR / f"dir{i}" for i in range(3)]
         args = Namespace(
-            directory=[str(d) for d in dirs],
-            parents=False,
-            mode=None,
-            verbose=False
+            directory=[str(d) for d in dirs], parents=False, mode=None, verbose=False
         )
         run(args)
         for d in dirs:
@@ -74,10 +64,7 @@ class TestMkdir:
         """Test verbose output"""
         test_dir = WORKDIR / "verbose_dir"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=False,
-            mode=None,
-            verbose=True
+            directory=[str(test_dir)], parents=False, mode=None, verbose=True
         )
         run(args)
         assert test_dir.exists()
@@ -89,10 +76,7 @@ class TestMkdir:
         test_dir = WORKDIR / "existing"
         test_dir.mkdir()
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=False,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=False, mode=None, verbose=False
         )
         with pytest.raises(SystemExit):
             run(args)
@@ -105,10 +89,7 @@ class TestMkdir:
         test_dir = WORKDIR / "parent_existing"
         test_dir.mkdir()
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=True,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=True, mode=None, verbose=False
         )
         run(args)  # Should not raise error
 
@@ -116,10 +97,7 @@ class TestMkdir:
         """Test creating local directory"""
         test_dir = tmp_path / "local_dir"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=False,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=False, mode=None, verbose=False
         )
         run(args)
         assert test_dir.exists()
@@ -129,10 +107,7 @@ class TestMkdir:
         """Test creating local directory with parents"""
         test_dir = tmp_path / "local/nested/dir"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=True,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=True, mode=None, verbose=False
         )
         run(args)
         assert test_dir.exists()
@@ -153,10 +128,7 @@ class TestMkdir:
 
         test_dir = no_access / "test"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=False,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=False, mode=None, verbose=False
         )
         with pytest.raises(SystemExit):
             run(args)
@@ -172,7 +144,7 @@ class TestMkdir:
             directory=[str(cloud_dir), str(local_dir)],
             parents=False,
             mode=None,
-            verbose=True
+            verbose=True,
         )
         run(args)
         assert cloud_dir.exists()
@@ -184,10 +156,7 @@ class TestMkdir:
         file_path.write_text("test")
         test_dir = file_path / "dir"
         args = Namespace(
-            directory=[str(test_dir)],
-            parents=True,
-            mode=None,
-            verbose=False
+            directory=[str(test_dir)], parents=True, mode=None, verbose=False
         )
         with pytest.raises(SystemExit):
             run(args)

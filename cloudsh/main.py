@@ -48,8 +48,10 @@ def create_parser() -> ArgumentParser:
 def main():
     if len(sys.argv) > 3:  # cloudsh ls -- -l
         command = sys.argv[1]
-        if (Path(__file__).parent.joinpath("commands", f"{command}.py").exists()
-            and sys.argv[2] == "--"):
+        if (
+            Path(__file__).parent.joinpath("commands", f"{command}.py").exists()
+            and sys.argv[2] == "--"
+        ):
             p = subprocess.run([command, *sys.argv[3:]])
             sys.exit(p.returncode)
 

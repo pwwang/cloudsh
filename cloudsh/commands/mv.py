@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import sys
+import shutil
 from typing import TYPE_CHECKING
 from cloudpathlib import AnyPath, CloudPath
-from cloudpathlib.exceptions import (
-    CloudPathNotImplementedError,
-    CloudPathIsADirectoryError,
-)
+from cloudpathlib.exceptions import CloudPathNotImplementedError
 
 from ..utils import PACKAGE
 
@@ -76,7 +74,8 @@ def _move_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
 
             if dst.is_dir() and not src.is_dir():
                 print(
-                    f"{PACKAGE} mv: cannot overwrite directory '{dst}' with non-directory",
+                    f"{PACKAGE} mv: cannot overwrite directory '{dst}' "
+                    "with non-directory",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -119,11 +118,16 @@ def _move_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
                 print(f"renamed '{src}' -> '{dst}'")
 
         except Exception as e:
-            print(f"{PACKAGE} mv: cannot move '{src}' to '{dst}': {str(e)}", file=sys.stderr)
+            print(
+                f"{PACKAGE} mv: cannot move '{src}' to '{dst}': {str(e)}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     except Exception as e:
-        print(f"{PACKAGE} mv: cannot move '{src}' to '{dst}': {str(e)}", file=sys.stderr)
+        print(
+            f"{PACKAGE} mv: cannot move '{src}' to '{dst}': {str(e)}", file=sys.stderr
+        )
         sys.exit(1)
 
 

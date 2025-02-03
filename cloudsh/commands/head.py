@@ -154,7 +154,8 @@ def _head_cloud_file(
         #     lines.pop()
 
         lines = [
-            (line if line.endswith(delim) else line + delim) for line in lines[:abs_num]
+            (line if line.endswith(delim) else line + delim)
+            for line in lines[:abs_num]
         ]
     else:
         # For negative line count:

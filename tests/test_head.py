@@ -1,5 +1,3 @@
-import io
-import sys
 from argparse import Namespace
 from uuid import uuid4
 import subprocess
@@ -272,7 +270,7 @@ def test_head_invalid_suffix(temp_file, capsys):
 
 
 def test_head_stdin(capsys, monkeypatch):
-    stdin_data = b"stdin1\nstdin2\nstdin3\n"
+    # stdin_data = b"stdin1\nstdin2\nstdin3\n"
 
     def mock_run(*args, **kwargs):
         # Simulate what GNU head would do with this input

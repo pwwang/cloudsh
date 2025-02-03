@@ -1,4 +1,5 @@
 """Implementation of complete command for shell completion generation."""
+
 from __future__ import annotations
 
 import os

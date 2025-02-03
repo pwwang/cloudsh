@@ -30,10 +30,16 @@ class TestSink:
     def setup_method(self):
         """Set up test input data"""
         self._orig_stdin = sys.stdin
-        sys.stdin = type('MockStdin', (), {
-            'buffer': type('MockBuffer', (), {'read': lambda _: b'test content'})(),
-            'isatty': lambda _: False,  # Add isatty method
-        })()
+        sys.stdin = type(
+            "MockStdin",
+            (),
+            {
+                "buffer": type(
+                    "MockBuffer", (), {"read": lambda _: b"test content"}
+                )(),
+                "isatty": lambda _: False,  # Add isatty method
+            },
+        )()
 
     def teardown_method(self):
         """Restore stdin"""
@@ -85,10 +91,16 @@ class TestSink:
 
     def test_sink_binary(self, tmp_path):
         """Test sinking binary content"""
-        sys.stdin = type('MockStdin', (), {
-            'buffer': type('MockBuffer', (), {'read': lambda _: b'binary\x00data'})(),
-            'isatty': lambda _: False,  # Add isatty method
-        })()
+        sys.stdin = type(
+            "MockStdin",
+            (),
+            {
+                "buffer": type(
+                    "MockBuffer", (), {"read": lambda _: b"binary\x00data"}
+                )(),
+                "isatty": lambda _: False,  # Add isatty method
+            },
+        )()
 
         outfile = tmp_path / "binary.bin"
         args = Namespace(
@@ -96,7 +108,7 @@ class TestSink:
             append=False,
         )
         run(args)
-        assert outfile.read_bytes() == b'binary\x00data'
+        assert outfile.read_bytes() == b"binary\x00data"
 
     def test_sink_permission_error(self, tmp_path, capsys):
         """Test handling permission errors"""
@@ -127,10 +139,14 @@ class TestSink:
 
     def test_sink_no_input(self, capsys):
         """Test handling no input data"""
-        sys.stdin = type('MockStdin', (), {
-            'buffer': type('MockBuffer', (), {'read': lambda _: b''})(),
-            'isatty': lambda _: True,  # Add isatty method
-        })()
+        sys.stdin = type(
+            "MockStdin",
+            (),
+            {
+                "buffer": type("MockBuffer", (), {"read": lambda _: b""})(),
+                "isatty": lambda _: True,  # Add isatty method
+            },
+        )()
 
         args = Namespace(
             file="output.txt",
