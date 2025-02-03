@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Any, Generator, Self
+from typing import Any, Generator
 from cloudpathlib.gs.gspath import GSPath as _GSPath
 from cloudpathlib.gs.gsclient import GSClient
 from cloudpathlib.cloudpath import register_path_class
@@ -83,7 +83,7 @@ class GSPath(_GSPath):
             return True
         return False
 
-    def iterdir(self) -> Generator[Self, None, None]:
+    def iterdir(self) -> Generator[GSPath, None, None]:
         """Iterate over the directory entries"""
         for f, _ in self.client._list_dir(self, recursive=False):
             if self == f:
