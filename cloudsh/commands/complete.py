@@ -132,6 +132,10 @@ def path_completer(prefix: str, **kwargs) -> list[str]:
 def run(args: Namespace) -> None:
     """Execute the complete command with given arguments."""
     if args.clear_cache:
+        if not args.path:
+            COMPLETE_CACHE.unlink(missing_ok=True)
+            return
+
         for path in args.path:
             _update_cache(path, None)
         return
