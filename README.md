@@ -2,6 +2,15 @@
 
 A Python CLI that wraps common Linux commands for both local and cloud files using [cloudpathlib](https://github.com/drivendataorg/cloudpathlib).
 
+[![Pypi][1]][2] [![Github][3]][4] [![PythonVers][5]][6] ![Building][7] [![Codacy coverage][8]][9]
+
+Dependencies:
+
+[![google-cloud-storage][10]][11] \
+[![boto3][12]][13] \
+[![azure-storage-blob][14]][15] \
+[![azure-storage-file-datalake][16]][17]
+
 ## Installation
 
 ```bash
@@ -71,7 +80,7 @@ $ echo "Hello, World!" | cloudsh sink gs://my-bucket/hello.txt
 $ echo "Hello, World!" | cloudsh sink -a gs://my-bucket/hello.txt
 ```
 
-## Best Practices
+## Drop-in Replacement for GNU/Linux Commands
 
 Since the commands work on local files as well, you can make aliases to use `cloudsh` as a drop-in replacement for the GNU/Linux commands.
 
@@ -143,3 +152,22 @@ cloudsh complete --update-cache --depth 2 gs://my-bucket
 
 > [!TIP]
 > For the first time you are using cached cloud path completion, a warning message will be shown to remind you that you are using a cached completion. The warning will only be shown when `<tmpdir>/cloudsh_caching_warned` does not exist, which will be created after the first warning. To disable the warning permanently, try `export CLOUDSH_COMPLETE_NO_CACHING_WARN=1`.
+
+
+[1]: https://img.shields.io/pypi/v/cloudsh?style=flat-square
+[2]: https://pypi.org/project/cloudsh/
+[3]: https://img.shields.io/github/v/tag/pwwang/cloudsh?style=flat-square
+[4]: https://github.com/pwwang/cloudsh/
+[5]: https://img.shields.io/pypi/pyversions/cloudsh?style=flat-square
+[6]: https://pypi.org/project/cloudsh/
+[7]: https://img.shields.io/github/actions/workflow/status/pwwang/cloudsh/build.yml
+[8]: https://img.shields.io/codacy/coverage/bb84185297244aefa6de4d675206a1cf?style=flat-square
+[9]: https://app.codacy.com/gh/pwwang/cloudsh/dashboard
+[10]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.google-cloud-storage.version&prefix=version%3A&style=flat-square&label=google-cloud-storage
+[11]: https://googleapis.dev/python/storage/latest/index.html
+[12]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.boto3.version&prefix=version%3A&style=flat-square&label=boto3
+[13]: https://pypi.org/project/boto3/
+[14]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.azure-storage-blob.version&prefix=version%3A&style=flat-square&label=azure-storage-blob
+[15]: https://pypi.org/project/azure-storage-blob/
+[16]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.azure-storage-file-datalake.version&prefix=version%3A&style=flat-square&label=azure-storage-file-datalake
+[17]: https://pypi.org/project/azure-storage-file-datalake/
