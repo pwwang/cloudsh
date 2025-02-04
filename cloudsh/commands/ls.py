@@ -102,8 +102,8 @@ def _format_entry_long(
         # Default values for all fields
         mode_str = "-" * 10
         nlink = 1
-        user = "nobody"
-        group = "nogroup"
+        user = "<unknown>"
+        group = "<unknown>"
         size = 0
         mtime = time.time()
 
