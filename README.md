@@ -128,6 +128,8 @@ echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
 cloudsh complete --shell fish > ~/.config/fish/completions/cloudsh.fish
 ```
 
+Because of the latency when completing cloud paths, a message 'fetching ...' will be shown when completing cloud paths. `export CLOUDSH_COMPLETE_NO_FETCHING_INDICATOR=1` to disable it.
+
 ### Using a caching file for the completion to avoid latency when completing cloud paths
 
 ```bash
@@ -138,3 +140,6 @@ cloudsh complete --update-cache --depth 2 gs://my-bucket
 > [!NOTE]
 > Remember to update the cache when the bucket structure changes.
 > You can set up a cron job to update the cache periodically.
+
+> [!TIP]
+> For the first time you are using cached cloud path completion, a warning message will be shown to remind you that you are using a cached completion. The warning will only be shown when `<tmpdir>/cloudsh_caching_warned` does not exist, which will be created after the first warning. To disable the warning permanently, try `export CLOUDSH_COMPLETE_NO_CACHING_WARN=1`.

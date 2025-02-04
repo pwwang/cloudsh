@@ -91,7 +91,12 @@ class GSPath(_GSPath):
                 # the situation at the marked line in __eq__ method
                 continue
 
-            yield f
+            # If we are list buckets,
+            # f = GSPath('gs://<Bucket: handy-buffer-287000.appspot.com>')
+            if f.bucket.startswith('<Bucket: '):
+                yield GSPath(f.cloud_prefix + f.bucket[9:-1])
+            else:
+                yield f
 
     def stat(self) -> os.stat_result:
         """Return the stat result for the path"""

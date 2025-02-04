@@ -18,30 +18,32 @@ COMPLETE_CACHE = Path.home() / ".cache" / "cloudsh" / "complete.cache"
 WARN_CACHING_INDICATOR_FILE = Path(gettempdir()) / "cloudsh_caching_warned"
 
 
-def _scan_path(path: str, depth: int = -1) -> Generator[CloudPath, None, None]:
+def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
     """Scan a path for files and directories."""
-    path = AnyPath(path)
-    if not isinstance(path, CloudPath):
+    apath = AnyPath(path)
+    if not isinstance(apath, CloudPath):
         print(f"{PACKAGE} complete: only cloud paths are supported", file=sys.stderr)
         sys.exit(1)
 
-    if not path.exists():
+    if not apath.exists():
         print(f"{PACKAGE} complete: path does not exist: {path}", file=sys.stderr)
         sys.exit(1)
 
-    if not path.is_dir():
+    if not apath.is_dir():
         yield path
 
     if depth == 0:
-        yield path
+        yield path.rstrip("/") + "/"
         return
 
     dep = 0
-    for p in path.iterdir():
-        yield p
+    for p in apath.iterdir():
         if p.is_dir():
+            yield str(p).rstrip("/") + "/"
             if depth == -1 or dep < depth:
-                yield from _scan_path(p, depth - 1)
+                yield from _scan_path(str(p), depth - 1)
+        else:
+            yield str(p)
 
 
 def _read_cache() -> Generator[str, None, None]:
@@ -52,7 +54,7 @@ def _read_cache() -> Generator[str, None, None]:
                 yield path.strip()
 
 
-def _update_cache(prefix: str, paths: Iterable[str | CloudPath] | None = None) -> None:
+def _update_cache(prefix: str, paths: Iterable[str] | None = None) -> None:
     """Write paths to bucket cache, update the ones with prefix.
     Or clear the cache if paths is None.
     """
@@ -68,7 +70,6 @@ def _update_cache(prefix: str, paths: Iterable[str | CloudPath] | None = None) -
         COMPLETE_CACHE.write_text("\n".join(other_cache))
         return
 
-    paths = [str(p) for p in paths]
     COMPLETE_CACHE.write_text("\n".join(other_cache | set(paths)))
 
 
@@ -87,34 +88,52 @@ def path_completer(prefix: str, **kwargs) -> list[str]:
 
     if "://" in prefix:
         if not COMPLETE_CACHE.exists():
+            if not os.environ.get("CLOUDSH_COMPLETE_NO_FETCHING_INDICATOR"):
+                warn("fetching ...")
 
-            if prefix.endswith("/"):
-                try:
-                    return list(map(str, CloudPath(prefix).iterdir()))
-                except Exception as e:
-                    warn(f"Error listing cloud path: {e}")
-                    return []
+            try:
+                if prefix.endswith("/"):
+                    return [
+                        str(p).rstrip("/") + "/" if p.is_dir() else str(p)
+                        for p in CloudPath(prefix).iterdir()
+                    ]
 
-            path = CloudPath(prefix)
-            return list(map(str, path.parent.glob(path.name + "*")))
+                if prefix.count("/") == 2:  # incomplete bucket name
+                    protocol, pref = prefix.split("://", 1)
+                    return [
+                        str(b).rstrip("/") + "/"
+                        for b in CloudPath(f"{protocol}://").iterdir()
+                        if b.bucket.startswith(pref)
+                    ]
 
-        if not WARN_CACHING_INDICATOR_FILE.exists():
-            WARN_CACHING_INDICATOR_FILE.touch()
-            warn(
-                "Using cached cloud path completion. This may not be up-to-date, "
-                f"run '{PACKAGE} complete --update-cache path...' "
-                "to update the cache.\n"
-                f"This warning will only show once per the nonexistence of "
-                f"{str(WARN_CACHING_INDICATOR_FILE)!r}."
-            )
+                path = CloudPath(prefix)
+                return [
+                    str(p).rstrip("/") + "/" if p.is_dir() else str(p)
+                    for p in path.parent.glob(path.name + "*")
+                ]
+            except Exception as e:
+                warn(f"Error listing cloud path: {e}")
+                return []
+
+        if not os.environ.get("CLOUDSH_COMPLETE_NO_CACHING_WARN"):
+            if not WARN_CACHING_INDICATOR_FILE.exists():
+                WARN_CACHING_INDICATOR_FILE.touch()
+                warn(
+                    "Using cached cloud path completion. This may not be up-to-date, "
+                    f"run '{PACKAGE} complete --update-cache path...' "
+                    "to update the cache.\n"
+                    f"This warning will only show once per the nonexistence of "
+                    f"{str(WARN_CACHING_INDICATOR_FILE)!r}."
+                )
 
         return [
             p for p in COMPLETE_CACHE.read_text().splitlines() if p.startswith(prefix)
         ]
 
-    return glob.glob(prefix + "*") + [
-        p for p in ("-", "gs://", "s3://", "az://") if p.startswith(prefix)
-    ]
+    return [
+        str(p).rstrip("/") + "/" if os.path.isdir(p) else str(p)
+        for p in glob.glob(prefix + "*")
+    ] + [p for p in ("-", "gs://", "s3://", "az://") if p.startswith(prefix)]
 
 
 def run(args: Namespace) -> None:
