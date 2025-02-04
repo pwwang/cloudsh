@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 import sys
 import importlib
 import subprocess
