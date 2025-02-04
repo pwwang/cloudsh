@@ -135,7 +135,8 @@ def _format_entry_long(
 
         return (
             f"{mode_str} {nlink:3d} {user:8} {group:8} "
-            f"{size_str:>8} {time_str} {path.name}"
+            f"{size_str:>8} {time_str} "
+            f"{path.name + '/' if path.is_dir() else path.name}"
         )
 
     except (OSError, NoStatError) as e:
@@ -201,7 +202,7 @@ def _list_entries(
                 if formatted:
                     entries.append(formatted)
             else:
-                entries.append(entry.name)
+                entries.append(entry.name + "/" if entry.is_dir() else entry.name)
 
         return entries
 
@@ -230,7 +231,7 @@ def run(args: Namespace) -> None:
                 long=args.l,
                 human_readable=args.human_readable,
                 si=args.si,
-                reverse=args.reverse,
+                reverse=args.reverse or False,
                 size_sort=args.S,
                 time_sort=args.t,
                 one_per_line=args.one,
