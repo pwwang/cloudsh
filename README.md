@@ -107,7 +107,7 @@ ls -- -l  # actually executes `/usr/bin/ls -l`
 
 ### Generating Shell Completion Scripts
 
-`cloudsh` provides shell completion, including the subcommands, options and both local and cloud paths, support for bash, zsh and fish. To enable it:
+`cloudsh` provides shell completion support, including the subcommands, options and both local and cloud paths, for bash, zsh and fish. To enable it:
 
 ```bash
 # For bash
@@ -151,7 +151,7 @@ cloudsh complete --update-cache --depth 2 gs://my-bucket
 > You can set up a cron job to update the cache periodically.
 
 > [!TIP]
-> For the first time you are using cached cloud path completion, a warning message will be shown to remind you that you are using a cached completion. The warning will only be shown when `<tmpdir>/cloudsh_caching_warned` does not exist, which will be created after the first warning. To disable the warning permanently, try `export CLOUDSH_COMPLETE_NO_CACHING_WARN=1`.
+> For the first time you are using cached cloud path completion, a warning message will be shown to remind you that you are using a cached completion. The warning will only be shown when `<tmpdir>/cloudsh_caching_warned` does not exist, which will be created after the first warning. To disable the warning permanently, try `export CLOUDSH_COMPLETE_CACHING_WARN=1`.
 
 
 [1]: https://img.shields.io/pypi/v/cloudsh?style=flat-square

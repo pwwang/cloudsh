@@ -115,7 +115,7 @@ def path_completer(prefix: str, **kwargs) -> list[str]:
                 warn(f"Error listing cloud path: {e}")
                 return []
 
-        if not os.environ.get("CLOUDSH_COMPLETE_NO_CACHING_WARN"):
+        if not os.environ.get("CLOUDSH_COMPLETE_CACHING_WARN"):
             if not WARN_CACHING_INDICATOR_FILE.exists():
                 WARN_CACHING_INDICATOR_FILE.touch()
                 warn(
