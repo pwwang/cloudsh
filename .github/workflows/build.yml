@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, 'wip')"
     strategy:
-      max-parallel: 2  # Limit to 2 parallel jobs avoid rate limiting to GCP
+      max-parallel: 1  # Limit to 2 parallel jobs avoid rate limiting to GCP
       matrix:
         python-version: [3.9, "3.10", "3.11", "3.12"]
 
