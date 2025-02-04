@@ -15,7 +15,6 @@ from cloudpathlib import AnyPath, CloudPath
 from ..utils import PACKAGE
 
 COMPLETE_CACHE = Path.home() / ".cache" / "cloudsh" / "complete.cache"
-WARN_FETCHING_INDICATOR_FILE = Path(gettempdir()) / "cloudsh_fetching_warned"
 WARN_CACHING_INDICATOR_FILE = Path(gettempdir()) / "cloudsh_caching_warned"
 
 
@@ -88,17 +87,6 @@ def path_completer(prefix: str, **kwargs) -> list[str]:
 
     if "://" in prefix:
         if not COMPLETE_CACHE.exists():
-            if not WARN_FETCHING_INDICATOR_FILE.exists():
-                WARN_FETCHING_INDICATOR_FILE.touch()
-                warn(
-                    "No cloud path cache found, using real-time fetching for "
-                    "completion.\n"
-                    f"Try running '{PACKAGE} complete --update-cache path...' "
-                    "to speed up completion for cloud paths.\n"
-                    f"This warning will only show once per the nonexistence of "
-                    f"{str(WARN_FETCHING_INDICATOR_FILE)!r}.\n"
-                    "Listing cloud paths may take a while."
-                )
 
             if prefix.endswith("/"):
                 try:

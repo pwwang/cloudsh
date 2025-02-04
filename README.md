@@ -98,7 +98,7 @@ ls -- -l  # actually executes `/usr/bin/ls -l`
 
 ### Generating Shell Completion Scripts
 
-`cloudsh` provides shell completion support for bash, zsh and fish. To enable it:
+`cloudsh` provides shell completion, including the subcommands, options and both local and cloud paths, support for bash, zsh and fish. To enable it:
 
 ```bash
 # For bash
@@ -128,7 +128,7 @@ echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
 cloudsh complete --shell fish > ~/.config/fish/completions/cloudsh.fish
 ```
 
-### Using a caching file for the completion to avoid latency
+### Using a caching file for the completion to avoid latency when completing cloud paths
 
 ```bash
 # Only cache the paths at depth 2 in the bucket
