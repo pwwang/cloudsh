@@ -4,7 +4,7 @@ A Python CLI that wraps common Linux commands for both local and cloud files usi
 
 [![Pypi][1]][2] [![Github][3]][4] [![PythonVers][5]][6] ![Building][7] [![Codacy coverage][8]][9]
 
-Dependencies:
+Cloud Storage Provider dependencies:
 
 [![google-cloud-storage][10]][11] \
 [![boto3][12]][13] \
