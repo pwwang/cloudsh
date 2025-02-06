@@ -17,6 +17,9 @@ google-cloud-storage = { version = "^2.19", optional = true }
 python-dateutil = "^2.9.0.post0"
 argcomplete = "^3.5.3"
 
+[tool.poetry.build]
+generate-setup-file = true
+
 [tool.poetry.extras]
 azure = ["azure-storage-blob", "azure-storage-file-datalake"]
 aws = ["boto3"]
