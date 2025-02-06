@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloudsh"
-version = "0.0.2"
+version = "0.0.3"
 description = "A Python CLI wrapping common Linux commands for local/cloud files."
 authors = ["Your Name <you@example.com>"]
 packages = [{ include = "cloudsh" }]
