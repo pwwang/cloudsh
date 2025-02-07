@@ -3,6 +3,7 @@ description = """
 List information about the FILEs (the current directory by default).
 Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
 """
+add_help = "help"
 path_options = "file"
 
 [[arguments]]
@@ -21,7 +22,7 @@ help = "use a long listing format"
 action = "store_true"
 
 [[arguments]]
-flags = ["-H", "--human-readable"]
+flags = ["-h", "--human-readable"]
 help = "with -l, print sizes like 1K 234M 2G etc."
 action = "store_true"
 

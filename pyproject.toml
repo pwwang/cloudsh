@@ -8,7 +8,7 @@ packages = [{ include = "cloudsh" }]
 [tool.poetry.dependencies]
 python = "^3.9"
 cloudpathlib = "^0.20"
-argx = "^0.2"
+argx = "^0.2.12"
 toml = "^0.10.2"
 azure-storage-blob = { version = "^12", optional = true }
 azure-storage-file-datalake = { version = "^12", optional = true }
