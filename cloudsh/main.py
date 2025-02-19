@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 import argcomplete
-import toml
+from simpleconf import Config
 from argx import ArgumentParser
 
 from .utils import PACKAGE, __version__
@@ -29,7 +29,7 @@ def create_parser() -> ArgumentParser:
     path_options = {}
     for argfile in Path(__file__).parent.joinpath("args").iterdir():
         cmd = argfile.stem
-        cmd_args = toml.load(argfile)
+        cmd_args = Config.load(argfile)
         path_options[cmd] = cmd_args.pop("path_options", [])
         cmd_args.setdefault("name", cmd)
         arg_defs["commands"].append(cmd_args)
