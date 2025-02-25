@@ -7,7 +7,7 @@ packages = [{ include = "cloudsh" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-yunpath = "^0.0.1"
+yunpath = "^0.0"
 argx = "^0.3"
 python-simpleconf = {version = "^0.6", extras = ["toml"]}
 azure-storage-blob = { version = "^12", optional = true }
