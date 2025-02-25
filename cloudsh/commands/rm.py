@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 from yunpath import AnyPath, CloudPath
@@ -92,7 +91,7 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
             try:
                 if path.is_dir():
                     if args.recursive:
-                        shutil.rmtree(path)
+                        path.rmtree()
                     elif args.dir:
                         path.rmdir()
                     else:

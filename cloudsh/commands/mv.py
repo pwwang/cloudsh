@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import shutil
 from typing import TYPE_CHECKING
 from yunpath import AnyPath, CloudPath
 from cloudpathlib.exceptions import CloudPathNotImplementedError
@@ -106,7 +105,7 @@ def _move_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
                         dst.mkdir(parents=True, exist_ok=True)
                         for item in src.iterdir():
                             _move_path(item, dst / item.name, args)
-                        shutil.rmtree(src)
+                        src.rmtree()
                     else:
                         dst.upload_from(src)
                         src.unlink()
