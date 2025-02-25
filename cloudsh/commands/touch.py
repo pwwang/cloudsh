@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from typing import TYPE_CHECKING
 from dateutil import parser as date_parser
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 
 from ..utils import PACKAGE
 

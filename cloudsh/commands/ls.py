@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Union, Optional
 from argparse import Namespace
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 from cloudpathlib.exceptions import NoStatError
 
 from ..utils import PACKAGE

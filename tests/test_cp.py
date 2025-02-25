@@ -2,7 +2,7 @@ import pytest
 from argparse import Namespace
 from uuid import uuid4
 
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 from cloudsh.commands.cp import run
 from .conftest import BUCKET

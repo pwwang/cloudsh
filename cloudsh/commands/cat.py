@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, BinaryIO, Iterator
 
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 if TYPE_CHECKING:
     from argx import Namespace

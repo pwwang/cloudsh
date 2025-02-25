@@ -3,7 +3,7 @@ from argparse import Namespace
 from uuid import uuid4
 
 import pytest
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 from cloudsh.commands.ls import run
 from .conftest import BUCKET
@@ -133,6 +133,7 @@ class TestLs:
         )
         run(args)
         out = capsys.readouterr().out
+
         assert "subdir" in out
         assert "test_dir/subdir:" in out
 

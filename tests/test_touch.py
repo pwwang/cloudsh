@@ -4,7 +4,7 @@ from argparse import Namespace
 from uuid import uuid4
 
 import pytest
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 from cloudsh.commands.touch import run
 from .conftest import BUCKET

@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Generator, Iterable
 from argcomplete import shellcode, warn
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 
 from ..utils import PACKAGE
 

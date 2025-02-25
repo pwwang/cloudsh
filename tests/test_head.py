@@ -3,7 +3,7 @@ from uuid import uuid4
 import subprocess
 
 import pytest
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 from cloudsh.commands.head import run
 from cloudsh.utils import PACKAGE

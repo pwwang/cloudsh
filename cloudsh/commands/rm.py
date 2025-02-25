@@ -6,7 +6,7 @@ import sys
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 
 from ..utils import PACKAGE
 

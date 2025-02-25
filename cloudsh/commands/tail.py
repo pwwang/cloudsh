@@ -1,7 +1,7 @@
 """Implementation of the tail command for both local and cloud files.
 
 This module provides functionality similar to GNU tail command but with added
-support for cloud storage files through cloudpathlib.
+support for cloud storage files through yunpath.
 
 Key features:
 - Supports both local and cloud files
@@ -20,7 +20,7 @@ import subprocess
 from queue import Queue, Empty as QueueEmpty
 from pathlib import Path
 from typing import TYPE_CHECKING
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 from cloudpathlib.exceptions import NoStatError
 
 from ..utils import PACKAGE, parse_number

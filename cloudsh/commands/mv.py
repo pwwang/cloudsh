@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import shutil
 from typing import TYPE_CHECKING
-from cloudpathlib import AnyPath, CloudPath
+from yunpath import AnyPath, CloudPath
 from cloudpathlib.exceptions import CloudPathNotImplementedError
 
 from ..utils import PACKAGE

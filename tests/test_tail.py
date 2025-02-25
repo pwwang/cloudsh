@@ -7,7 +7,7 @@ from uuid import uuid4
 import subprocess
 
 import pytest
-from cloudpathlib import AnyPath
+from yunpath import AnyPath
 
 from cloudsh.commands.tail import run, _print_header
 
