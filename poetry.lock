@@ -16,17 +16,17 @@ test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
 
 [[package]]
 name = "argx"
-version = "0.3.0"
+version = "0.3.1"
 description = "Super-charged argparse for python"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "argx-0.3.0-py3-none-any.whl", hash = "sha256:8a5d360cc3ce65800cf108c8ac5d458882654df18deb4868b148487c20ff6818"},
-    {file = "argx-0.3.0.tar.gz", hash = "sha256:261369b1f82cf2713581a7078ecad5e6331f443bc16372e95ad95a81c2e7ad79"},
+    {file = "argx-0.3.1-py3-none-any.whl", hash = "sha256:2e57e4a8ce1dd60c1ed8535523e1feb19308561e99144173f50078e6da6d729c"},
+    {file = "argx-0.3.1.tar.gz", hash = "sha256:dbb84a2dedfef40e79a05222d4c2926856b61e0fb52f39cfcf1bd04a5fcb8eaa"},
 ]
 
 [package.dependencies]
-python-simpleconf = ">=0.6,<0.7"
+python-simpleconf = ">=0.7,<0.8"
 
 [[package]]
 name = "azure-core"
@@ -89,17 +89,17 @@ aio = ["azure-core[aio] (>=1.30.0)"]
 
 [[package]]
 name = "boto3"
-version = "1.37.0"
+version = "1.37.3"
 description = "The AWS SDK for Python"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.37.0-py3-none-any.whl", hash = "sha256:03bd8c93b226f07d944fd6b022e11a307bff94ab6a21d51675d7e3ea81ee8424"},
-    {file = "boto3-1.37.0.tar.gz", hash = "sha256:01015b38017876d79efd7273f35d9a4adfba505237159621365bed21b9b65eca"},
+    {file = "boto3-1.37.3-py3-none-any.whl", hash = "sha256:2063b40af99fd02f6228ff52397b552ff3353831edaf8d25cc04801827ab9794"},
+    {file = "boto3-1.37.3.tar.gz", hash = "sha256:21f3ce0ef111297e63a6eb998a25197b8c10982970c320d4c6e8db08be2157be"},
 ]
 
 [package.dependencies]
-botocore = ">=1.37.0,<1.38.0"
+botocore = ">=1.37.3,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -108,13 +108,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.37.0"
+version = "1.37.3"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.37.0-py3-none-any.whl", hash = "sha256:d01661f38c0edac87424344cdf4169f3ab9bc1bf1b677c8b230d025eb66c54a3"},
-    {file = "botocore-1.37.0.tar.gz", hash = "sha256:b129d091a8360b4152ab65327186bf4e250de827c4a9b7ddf40a72b1acf1f3c1"},
+    {file = "botocore-1.37.3-py3-none-any.whl", hash = "sha256:d01bd3bf4c80e61fa88d636ad9f5c9f60a551d71549b481386c6b4efe0bb2b2e"},
+    {file = "botocore-1.37.3.tar.gz", hash = "sha256:fe8403eb55a88faf9b0f9da6615e5bee7be056d75e17af66c3c8f0a3b0648da4"},
 ]
 
 [package.dependencies]
@@ -592,19 +592,19 @@ grpc = ["grpcio (>=1.38.0,<2.0dev)", "grpcio-status (>=1.38.0,<2.0.dev0)"]
 
 [[package]]
 name = "google-cloud-storage"
-version = "3.0.0"
+version = "3.1.0"
 description = "Google Cloud Storage API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google_cloud_storage-3.0.0-py2.py3-none-any.whl", hash = "sha256:f85fd059650d2dbb0ac158a9a6b304b66143b35ed2419afec2905ca522eb2c6a"},
-    {file = "google_cloud_storage-3.0.0.tar.gz", hash = "sha256:2accb3e828e584888beff1165e5f3ac61aa9088965eb0165794a82d8c7f95297"},
+    {file = "google_cloud_storage-3.1.0-py2.py3-none-any.whl", hash = "sha256:eaf36966b68660a9633f03b067e4a10ce09f1377cae3ff9f2c699f69a81c66c6"},
+    {file = "google_cloud_storage-3.1.0.tar.gz", hash = "sha256:944273179897c7c8a07ee15f2e6466a02da0c7c4b9ecceac2a26017cb2972049"},
 ]
 
 [package.dependencies]
 google-api-core = ">=2.15.0,<3.0.0dev"
 google-auth = ">=2.26.1,<3.0dev"
-google-cloud-core = ">=2.3.0,<3.0dev"
+google-cloud-core = ">=2.4.2,<3.0dev"
 google-crc32c = ">=1.0,<2.0dev"
 google-resumable-media = ">=2.7.2"
 requests = ">=2.18.0,<3.0.0dev"
@@ -914,13 +914,13 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-simpleconf"
-version = "0.6.2"
+version = "0.7.0"
 description = "Simple configuration management with python."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "python_simpleconf-0.6.2-py3-none-any.whl", hash = "sha256:72f04053d570a3eec35d084a99683e1d46520a1b13d5a896b2c7ed805745a407"},
-    {file = "python_simpleconf-0.6.2.tar.gz", hash = "sha256:3f0aee5fdabf55c63755cb47c42920ba3bb35072cecf97ab0b963b1d9e1e5eaf"},
+    {file = "python_simpleconf-0.7.0-py3-none-any.whl", hash = "sha256:16cd75940a4a5b8776f482fdfc1a3708ad598ff6b236e3bb1edbf2362fbef663"},
+    {file = "python_simpleconf-0.7.0.tar.gz", hash = "sha256:fef742e3dee861d20bf591e6e7515c2744b326b201a84c373f86628564bc3f59"},
 ]
 
 [package.dependencies]
@@ -1045,13 +1045,13 @@ files = [
 
 [[package]]
 name = "s3transfer"
-version = "0.11.2"
+version = "0.11.3"
 description = "An Amazon S3 Transfer Manager"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "s3transfer-0.11.2-py3-none-any.whl", hash = "sha256:be6ecb39fadd986ef1701097771f87e4d2f821f27f6071c872143884d2950fbc"},
-    {file = "s3transfer-0.11.2.tar.gz", hash = "sha256:3b39185cb72f5acc77db1a58b6e25b977f28d20496b6e58d6813d75f464d632f"},
+    {file = "s3transfer-0.11.3-py3-none-any.whl", hash = "sha256:ca855bdeb885174b5ffa95b9913622459d4ad8e331fc98eb01e6d5eb6a30655d"},
+    {file = "s3transfer-0.11.3.tar.gz", hash = "sha256:edae4977e3a122445660c7c114bba949f9d191bae3b34a096f18a1c8c354527a"},
 ]
 
 [package.dependencies]
@@ -1158,13 +1158,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "yunpath"
-version = "0.0.1"
+version = "0.0.2"
 description = "Monkey patch cloudpathlib to fix issues or add features"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "yunpath-0.0.1-py3-none-any.whl", hash = "sha256:a23126554c4ea90b208912056b99d3db5508321d8f4a112299fbf2620cba408f"},
-    {file = "yunpath-0.0.1.tar.gz", hash = "sha256:142219744c04836a01df7111152969f3456aa9a9cc325eaad99fbf19c28c2a7f"},
+    {file = "yunpath-0.0.2-py3-none-any.whl", hash = "sha256:b3d8d8fdaf0c97ca87840873f46dfdb5ababdc161b452ea75d1beeb0972f5007"},
+    {file = "yunpath-0.0.2.tar.gz", hash = "sha256:31387994a8bc420064e7210954e609ddb5f2a896ce019ef66794989c7d93e41c"},
 ]
 
 [package.dependencies]
@@ -1180,4 +1180,4 @@ gs = ["google-cloud-storage"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "d27f9b5a6d7c8e1c079b4ae3b419d46e5d15b6c2abe19551ad103375652b21e6"
+content-hash = "94dff1b79767a16044cdf093352b315b9547ad1ca27bafbed970444df670091b"
