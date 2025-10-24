@@ -32,8 +32,10 @@ pip install -U cloudsh[all]
 - `cat`: Concatenate and print files
 - `cp`: Copy files and directories
 - `head`: Output the first part of files
+- `less`: Display file contents with forward and backward navigation
 - `ls`: List directory contents
 - `mkdir`: Make directories
+- `more`: Display file contents page by page
 - `mv`: Move files and directories
 - `rm`: Remove files and directories
 - `tail`: Output the last part of files

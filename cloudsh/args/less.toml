@@ -1,0 +1,67 @@
+name = "less"
+help = "Display file contents with forward and backward navigation"
+description = """
+Display FILE(s) with the ability to scroll forward and backward through the content.
+Less is more powerful than more, providing features like search, backward scrolling,
+and pattern matching.
+
+With no FILE, or when FILE is -, read standard input.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "*"
+help = "Files to display (use - for stdin)"
+
+[[arguments]]
+flags = ["-E", "--QUIT-AT-EOF"]
+help = "automatically exit the second time end-of-file is reached"
+action = "store_true"
+
+[[arguments]]
+flags = ["-F", "--quit-if-one-screen"]
+help = "quit if entire file fits on first screen"
+action = "store_true"
+
+[[arguments]]
+flags = ["-i", "--ignore-case"]
+help = "ignore case in searches"
+action = "store_true"
+
+[[arguments]]
+flags = ["-I", "--IGNORE-CASE"]
+help = "ignore case in searches and in search patterns"
+action = "store_true"
+
+[[arguments]]
+flags = ["-N", "--LINE-NUMBERS"]
+help = "display line numbers"
+action = "store_true"
+
+[[arguments]]
+flags = ["-S", "--chop-long-lines"]
+help = "truncate long lines instead of wrapping"
+action = "store_true"
+
+[[arguments]]
+flags = ["-X", "--no-init"]
+help = "do not clear screen on exit"
+action = "store_true"
+
+[[arguments]]
+flags = ["-s", "--squeeze-blank-lines"]
+help = "squeeze multiple blank lines into one"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--line-numbers"]
+help = "display line numbers"
+action = "store_true"
+
+[[arguments]]
+flags = ["-p", "--pattern"]
+metavar = "PATTERN"
+help = "start at first occurrence of PATTERN"
+type = "str"

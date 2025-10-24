@@ -1,0 +1,56 @@
+name = "more"
+help = "Display file contents page by page"
+description = """
+Display FILE(s) page by page, pausing after each screenful. Press space to continue,
+'q' to quit, or 'h' for help.
+
+With no FILE, or when FILE is -, read standard input.
+"""
+path_options = "file"
+
+[[arguments]]
+flags = ["file"]
+metavar = "FILE"
+nargs = "*"
+help = "Files to display (use - for stdin)"
+
+[[arguments]]
+flags = ["-d", "--silent"]
+help = "display help instead of ringing bell"
+action = "store_true"
+
+[[arguments]]
+flags = ["-f", "--no-pause"]
+help = "count logical lines rather than screen lines"
+action = "store_true"
+
+[[arguments]]
+flags = ["-l", "--no-init"]
+help = "do not clear screen before displaying"
+action = "store_true"
+
+[[arguments]]
+flags = ["-c", "--print-over"]
+help = "do not scroll, display and clear"
+action = "store_true"
+
+[[arguments]]
+flags = ["-p", "--clean-print"]
+help = "do not scroll, clean line and display"
+action = "store_true"
+
+[[arguments]]
+flags = ["-s", "--squeeze"]
+help = "squeeze multiple blank lines into one"
+action = "store_true"
+
+[[arguments]]
+flags = ["-u", "--plain"]
+help = "suppress underlining and bold"
+action = "store_true"
+
+[[arguments]]
+flags = ["-n", "--lines"]
+metavar = "NUM"
+help = "the number of lines per screenful"
+type = "int"
