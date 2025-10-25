@@ -107,6 +107,18 @@ def _clear_screen() -> None:
     sys.stdout.flush()
 
 
+def _enter_alternate_screen() -> None:
+    """Enter the alternate screen buffer."""
+    sys.stdout.write('\033[?1049h')
+    sys.stdout.flush()
+
+
+def _exit_alternate_screen() -> None:
+    """Exit the alternate screen buffer."""
+    sys.stdout.write('\033[?1049l')
+    sys.stdout.flush()
+
+
 def _display_lines(
     lines: List[bytes],
     start: int,
@@ -312,174 +324,194 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
         if found is not None:
             current_line = found
 
-    # Clear screen unless --no-init
+    # Enter alternate screen buffer unless --no-init
     if not args.no_init:
+        _enter_alternate_screen()
         _clear_screen()
 
     search_pattern = args.pattern or ""
     eof_count = 0
 
-    while True:
-        # Ensure current_line is within bounds
-        current_line = max(0, min(current_line, total_lines - 1))
+    try:
+        while True:
+            # Ensure current_line is within bounds
+            current_line = max(0, min(current_line, total_lines - 1))
 
-        # Display current page
-        if not args.no_init:
-            _clear_screen()
+            # Display current page
+            if not args.no_init:
+                _clear_screen()
 
-        lines_displayed = _display_lines(lines, current_line, screen_lines, args)
+            lines_displayed = _display_lines(lines, current_line, screen_lines, args)
 
-        # Show status line
-        _show_status(filename, current_line + lines_displayed, total_lines)
+            # Show status line
+            _show_status(filename, current_line + lines_displayed, total_lines)
 
-        # Get user input
-        ch = _get_char()
+            # Get user input
+            ch = _get_char()
 
-        # Clear status line
-        _clear_status()
+            # Clear status line
+            _clear_status()
 
-        # Handle commands
-        if ch == 'q' or ch == 'Q':
-            # Quit
-            break
-        elif ch == ' ' or ch == 'f' or ch == '\x06':  # Space, f, or Ctrl+F
-            # Forward one screen
-            current_line += screen_lines - 1
-            if current_line >= total_lines - 1:
-                current_line = max(0, total_lines - screen_lines)
-                eof_count += 1
-                if args.QUIT_AT_EOF and eof_count >= 2:
+            # Handle commands
+            if ch == 'q' or ch == 'Q':
+                # Quit
+                break
+            elif ch == 'Z':
+                # Check for ZZ (quit)
+                ch2 = _get_char()
+                if ch2 == 'Z':
                     break
-        elif ch == 'b' or ch == '\x02':  # b or Ctrl+B
-            # Backward one screen
-            current_line -= screen_lines - 1
-            current_line = max(0, current_line)
-            eof_count = 0
-        elif ch == '\r' or ch == '\n' or ch == 'j' or ch == '\x0e':  # Enter, j, or Ctrl+N
-            # Forward one line
-            if current_line < total_lines - 1:
-                current_line += 1
-            eof_count = 0
-        elif ch == 'k' or ch == '\x10' or ch == 'y':  # k, Ctrl+P, or y
-            # Backward one line
-            if current_line > 0:
-                current_line -= 1
-            eof_count = 0
-        elif ch == 'd' or ch == '\x04':  # d or Ctrl+D
-            # Forward half screen
-            current_line += screen_lines // 2
-            eof_count = 0
-        elif ch == 'u' or ch == '\x15':  # u or Ctrl+U
-            # Backward half screen
-            current_line -= screen_lines // 2
-            current_line = max(0, current_line)
-            eof_count = 0
-        elif ch == 'g' or ch == '<':
-            # Go to beginning
-            current_line = 0
-            eof_count = 0
-        elif ch == 'G' or ch == '>':
-            # Go to end
-            current_line = max(0, total_lines - screen_lines)
-            eof_count = 0
-        elif ch == '/':
-            # Search forward
-            pattern = _get_input('/')
-            if pattern:
-                search_pattern = pattern
-                found = _search_forward(
-                    lines,
-                    search_pattern,
-                    current_line + 1,
-                    args.ignore_case or args.IGNORE_CASE,
-                )
-                if found is not None:
-                    current_line = found
-                else:
-                    _show_status(filename, current_line, total_lines, "Pattern not found")
-                    _get_char()
-            eof_count = 0
-        elif ch == '?':
-            # Search backward
-            pattern = _get_input('?')
-            if pattern:
-                search_pattern = pattern
-                found = _search_backward(
-                    lines,
-                    search_pattern,
-                    current_line,
-                    args.ignore_case or args.IGNORE_CASE,
-                )
-                if found is not None:
-                    current_line = found
-                else:
-                    _show_status(filename, current_line, total_lines, "Pattern not found")
-                    _get_char()
-            eof_count = 0
-        elif ch == 'n':
-            # Repeat last search forward
-            if search_pattern:
-                found = _search_forward(
-                    lines,
-                    search_pattern,
-                    current_line + 1,
-                    args.ignore_case or args.IGNORE_CASE,
-                )
-                if found is not None:
-                    current_line = found
-                else:
-                    _show_status(filename, current_line, total_lines, "Pattern not found")
-                    _get_char()
-            eof_count = 0
-        elif ch == 'N':
-            # Repeat last search backward
-            if search_pattern:
-                found = _search_backward(
-                    lines,
-                    search_pattern,
-                    current_line,
-                    args.ignore_case or args.IGNORE_CASE,
-                )
-                if found is not None:
-                    current_line = found
-                else:
-                    _show_status(filename, current_line, total_lines, "Pattern not found")
-                    _get_char()
-            eof_count = 0
-        elif ch == 'h' or ch == 'H':
-            # Help
-            help_lines = [
-                b"SUMMARY OF LESS COMMANDS\n",
-                b"\n",
-                b"  Commands marked with * may be preceded by a number, N.\n",
-                b"\n",
-                b"  h  H                 Display this help.\n",
-                b"  q  Q                 Exit.\n",
-                b"\n",
-                b"  MOVING:\n",
-                b"  SPACE  f  ^F  *      Forward one screen.\n",
-                b"  b  ^B             *  Backward one screen.\n",
-                b"  RETURN  j  ^N     *  Forward one line.\n",
-                b"  k  y  ^P          *  Backward one line.\n",
-                b"  d  ^D             *  Forward one half-screen.\n",
-                b"  u  ^U             *  Backward one half-screen.\n",
-                b"  g  <              *  Go to first line in file.\n",
-                b"  G  >              *  Go to last line in file.\n",
-                b"\n",
-                b"  SEARCHING:\n",
-                b"  /pattern          *  Search forward for pattern.\n",
-                b"  ?pattern          *  Search backward for pattern.\n",
-                b"  n                 *  Repeat previous search (forward).\n",
-                b"  N                 *  Repeat previous search (backward).\n",
-                b"\n",
-            ]
-            _clear_screen()
-            for line in help_lines:
-                sys.stdout.buffer.write(line)
-            sys.stdout.write("\nPress any key to continue...")
-            sys.stdout.flush()
-            _get_char()
-            eof_count = 0
+                # If not ZZ, ignore both characters
+                eof_count = 0
+            elif ch == ':':
+                # Check for :q (quit)
+                command = _get_input(':')
+                if command in ('q', 'Q', 'quit'):
+                    break
+                # If not a quit command, ignore
+                eof_count = 0
+            elif ch == ' ' or ch == 'f' or ch == '\x06':  # Space, f, or Ctrl+F
+                # Forward one screen
+                current_line += screen_lines - 1
+                if current_line >= total_lines - 1:
+                    current_line = max(0, total_lines - screen_lines)
+                    eof_count += 1
+                    if args.QUIT_AT_EOF and eof_count >= 2:
+                        break
+            elif ch == 'b' or ch == '\x02':  # b or Ctrl+B
+                # Backward one screen
+                current_line -= screen_lines - 1
+                current_line = max(0, current_line)
+                eof_count = 0
+            elif ch == '\r' or ch == '\n' or ch == 'j' or ch == '\x0e':  # Enter, j, or Ctrl+N
+                # Forward one line
+                if current_line < total_lines - 1:
+                    current_line += 1
+                eof_count = 0
+            elif ch == 'k' or ch == '\x10' or ch == 'y':  # k, Ctrl+P, or y
+                # Backward one line
+                if current_line > 0:
+                    current_line -= 1
+                eof_count = 0
+            elif ch == 'd' or ch == '\x04':  # d or Ctrl+D
+                # Forward half screen
+                current_line += screen_lines // 2
+                eof_count = 0
+            elif ch == 'u' or ch == '\x15':  # u or Ctrl+U
+                # Backward half screen
+                current_line -= screen_lines // 2
+                current_line = max(0, current_line)
+                eof_count = 0
+            elif ch == 'g' or ch == '<':
+                # Go to beginning
+                current_line = 0
+                eof_count = 0
+            elif ch == 'G' or ch == '>':
+                # Go to end
+                current_line = max(0, total_lines - screen_lines)
+                eof_count = 0
+            elif ch == '/':
+                # Search forward
+                pattern = _get_input('/')
+                if pattern:
+                    search_pattern = pattern
+                    found = _search_forward(
+                        lines,
+                        search_pattern,
+                        current_line + 1,
+                        args.ignore_case or args.IGNORE_CASE,
+                    )
+                    if found is not None:
+                        current_line = found
+                    else:
+                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _get_char()
+                eof_count = 0
+            elif ch == '?':
+                # Search backward
+                pattern = _get_input('?')
+                if pattern:
+                    search_pattern = pattern
+                    found = _search_backward(
+                        lines,
+                        search_pattern,
+                        current_line,
+                        args.ignore_case or args.IGNORE_CASE,
+                    )
+                    if found is not None:
+                        current_line = found
+                    else:
+                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _get_char()
+                eof_count = 0
+            elif ch == 'n':
+                # Repeat last search forward
+                if search_pattern:
+                    found = _search_forward(
+                        lines,
+                        search_pattern,
+                        current_line + 1,
+                        args.ignore_case or args.IGNORE_CASE,
+                    )
+                    if found is not None:
+                        current_line = found
+                    else:
+                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _get_char()
+                eof_count = 0
+            elif ch == 'N':
+                # Repeat last search backward
+                if search_pattern:
+                    found = _search_backward(
+                        lines,
+                        search_pattern,
+                        current_line,
+                        args.ignore_case or args.IGNORE_CASE,
+                    )
+                    if found is not None:
+                        current_line = found
+                    else:
+                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _get_char()
+                eof_count = 0
+            elif ch == 'h' or ch == 'H':
+                # Help
+                help_lines = [
+                    b"SUMMARY OF LESS COMMANDS\n",
+                    b"\n",
+                    b"  Commands marked with * may be preceded by a number, N.\n",
+                    b"\n",
+                    b"  h  H                 Display this help.\n",
+                    b"  q  Q  ZZ  :q         Exit.\n",
+                    b"\n",
+                    b"  MOVING:\n",
+                    b"  SPACE  f  ^F  *      Forward one screen.\n",
+                    b"  b  ^B             *  Backward one screen.\n",
+                    b"  RETURN  j  ^N     *  Forward one line.\n",
+                    b"  k  y  ^P          *  Backward one line.\n",
+                    b"  d  ^D             *  Forward one half-screen.\n",
+                    b"  u  ^U             *  Backward one half-screen.\n",
+                    b"  g  <              *  Go to first line in file.\n",
+                    b"  G  >              *  Go to last line in file.\n",
+                    b"\n",
+                    b"  SEARCHING:\n",
+                    b"  /pattern          *  Search forward for pattern.\n",
+                    b"  ?pattern          *  Search backward for pattern.\n",
+                    b"  n                 *  Repeat previous search (forward).\n",
+                    b"  N                 *  Repeat previous search (backward).\n",
+                    b"\n",
+                ]
+                _clear_screen()
+                for line in help_lines:
+                    sys.stdout.buffer.write(line)
+                sys.stdout.write("\nPress any key to continue...")
+                sys.stdout.flush()
+                _get_char()
+                eof_count = 0
+    finally:
+        # Exit alternate screen buffer unless --no-init
+        if not args.no_init:
+            _exit_alternate_screen()
 
 
 def run(args: Namespace) -> None:
@@ -506,7 +538,7 @@ def run(args: Namespace) -> None:
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully
                 if not args.no_init:
-                    _clear_screen()
+                    _exit_alternate_screen()
                 sys.exit(130)
             except BrokenPipeError:
                 sys.stderr.close()
@@ -518,7 +550,3 @@ def run(args: Namespace) -> None:
     except BrokenPipeError:
         sys.stderr.close()
         sys.exit(141)
-    finally:
-        # Clear screen on exit unless --no-init
-        if not args.no_init:
-            _clear_screen()

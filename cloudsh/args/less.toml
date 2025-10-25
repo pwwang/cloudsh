@@ -47,7 +47,7 @@ action = "store_true"
 
 [[arguments]]
 flags = ["-X", "--no-init"]
-help = "do not clear screen on exit"
+help = "do not use alternate screen (content remains after exit)"
 action = "store_true"
 
 [[arguments]]

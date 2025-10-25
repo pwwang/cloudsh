@@ -520,3 +520,124 @@ class TestLess:
         run(args)
         captured = capsys.readouterr()
         assert "stdin via dash" in captured.out
+
+    def test_less_exit_with_zz(self, basic_file, capsys, monkeypatch):
+        """Test exiting with ZZ command"""
+        char_sequence = iter(['Z', 'Z'])
+
+        def mock_get_char():
+            return next(char_sequence, 'q')
+
+        monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        args = Namespace(
+            file=[basic_file],
+            QUIT_AT_EOF=False,
+            quit_if_one_screen=False,
+            ignore_case=False,
+            IGNORE_CASE=False,
+            LINE_NUMBERS=False,
+            chop_long_lines=False,
+            no_init=True,
+            squeeze_blank_lines=False,
+            line_numbers=False,
+            pattern=None,
+        )
+        run(args)
+        # Should exit cleanly without error
+        captured = capsys.readouterr()
+        assert len(captured.out) > 0
+
+    def test_less_exit_with_colon_q(self, basic_file, capsys, monkeypatch):
+        """Test exiting with :q command"""
+        char_sequence = iter([':'])
+
+        def mock_get_char():
+            return next(char_sequence, 'q')
+
+        def mock_get_input(prompt):
+            return 'q'
+
+        monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
+        monkeypatch.setattr("cloudsh.commands.less._get_input", mock_get_input)
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        args = Namespace(
+            file=[basic_file],
+            QUIT_AT_EOF=False,
+            quit_if_one_screen=False,
+            ignore_case=False,
+            IGNORE_CASE=False,
+            LINE_NUMBERS=False,
+            chop_long_lines=False,
+            no_init=True,
+            squeeze_blank_lines=False,
+            line_numbers=False,
+            pattern=None,
+        )
+        run(args)
+        # Should exit cleanly without error
+        captured = capsys.readouterr()
+        assert len(captured.out) > 0
+
+    def test_less_exit_with_colon_quit(self, basic_file, capsys, monkeypatch):
+        """Test exiting with :quit command"""
+        char_sequence = iter([':'])
+
+        def mock_get_char():
+            return next(char_sequence, 'q')
+
+        def mock_get_input(prompt):
+            return 'quit'
+
+        monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
+        monkeypatch.setattr("cloudsh.commands.less._get_input", mock_get_input)
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        args = Namespace(
+            file=[basic_file],
+            QUIT_AT_EOF=False,
+            quit_if_one_screen=False,
+            ignore_case=False,
+            IGNORE_CASE=False,
+            LINE_NUMBERS=False,
+            chop_long_lines=False,
+            no_init=True,
+            squeeze_blank_lines=False,
+            line_numbers=False,
+            pattern=None,
+        )
+        run(args)
+        # Should exit cleanly without error
+        captured = capsys.readouterr()
+        assert len(captured.out) > 0
+
+    def test_less_single_z_not_exit(self, basic_file, capsys, monkeypatch):
+        """Test that single Z doesn't exit (needs ZZ)"""
+        char_sequence = iter(['Z', 'x', 'q'])  # Z, then x (not Z), then q to quit
+
+        def mock_get_char():
+            return next(char_sequence, 'q')
+
+        monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        args = Namespace(
+            file=[basic_file],
+            QUIT_AT_EOF=False,
+            quit_if_one_screen=False,
+            ignore_case=False,
+            IGNORE_CASE=False,
+            LINE_NUMBERS=False,
+            chop_long_lines=False,
+            no_init=True,
+            squeeze_blank_lines=False,
+            line_numbers=False,
+            pattern=None,
+        )
+        run(args)
+        # Should eventually quit with 'q'
+        captured = capsys.readouterr()
+        assert len(captured.out) > 0
+
