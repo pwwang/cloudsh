@@ -1,36 +1,18 @@
 from pathlib import Path
 from argparse import Namespace
-from uuid import uuid4
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.ls import run
-from .conftest import BUCKET
-
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-    WORKDIR.mkdir(parents=True)
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class TestLs:
     """Test ls command functionality"""
 
     @pytest.fixture
-    def test_dir(self):
+    def test_dir(self, workdir):
         """Create a test directory with various files"""
-        path = WORKDIR / "test_dir"
+        path = workdir / "test_dir"
         path.mkdir(exist_ok=True)
         (path / "file1.txt").write_text("content1")
         (path / "file2.txt").write_text("content2" * 1000)  # Larger file

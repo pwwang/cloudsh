@@ -1,11 +1,9 @@
 """Tests for the less command."""
 
 from argparse import Namespace
-from uuid import uuid4
 from io import BytesIO
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.less import (
     run,
@@ -14,22 +12,6 @@ from cloudsh.commands.less import (
     _search_forward,
     _search_backward,
 )
-from .conftest import BUCKET
-
-# Create workdir as module-level variable
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class MockStdin:
@@ -50,39 +32,39 @@ class TestLess:
     """Test less command functionality"""
 
     @pytest.fixture
-    def basic_file(self):
+    def basic_file(self, workdir):
         """Create a basic test file"""
-        path = WORKDIR / "basic.txt"
+        path = workdir / "basic.txt"
         content = "\n".join([f"Line {i}" for i in range(1, 51)])  # 50 lines
         path.write_text(content)
         return str(path)
 
     @pytest.fixture
-    def small_file(self):
+    def small_file(self, workdir):
         """Create a small test file that fits on one screen"""
-        path = WORKDIR / "small.txt"
+        path = workdir / "small.txt"
         path.write_text("Line 1\nLine 2\nLine 3\n")
         return str(path)
 
     @pytest.fixture
-    def search_file(self):
+    def search_file(self, workdir):
         """Create a file for search testing"""
-        path = WORKDIR / "search.txt"
+        path = workdir / "search.txt"
         content = "apple\nbanana\ncherry\ndate\napricot\navocado\n"
         path.write_text(content)
         return str(path)
 
     @pytest.fixture
-    def empty_lines_file(self):
+    def empty_lines_file(self, workdir):
         """Create a file with empty lines"""
-        path = WORKDIR / "empty_lines.txt"
+        path = workdir / "empty_lines.txt"
         path.write_text("line1\n\n\n\nline2\n\n\nline3\n")
         return str(path)
 
     @pytest.fixture
-    def no_newline_file(self):
+    def no_newline_file(self, workdir):
         """Create a file without trailing newline"""
-        path = WORKDIR / "no_newline.txt"
+        path = workdir / "no_newline.txt"
         path.write_bytes(b"Line 1\nLine 2\nLine 3")
         return str(path)
 
@@ -362,9 +344,9 @@ class TestLess:
         assert "1" in captured.out
         assert "2" in captured.out
 
-    def test_less_empty_file(self, capsys, monkeypatch):
+    def test_less_empty_file(self, workdir, capsys, monkeypatch):
         """Test less with empty file"""
-        empty_file = WORKDIR / "empty.txt"
+        empty_file = workdir / "empty.txt"
         empty_file.write_text("")
 
         mock_stdin = MockStdin(b"", is_tty=False)
@@ -388,13 +370,13 @@ class TestLess:
         # Empty file should produce minimal or no output
         assert len(captured.out) < 10
 
-    def test_less_cloud_file(self, basic_file, capsys, monkeypatch):
-        """Test less with cloud storage file"""
+    def test_less_local_file(self, basic_file, capsys, monkeypatch):
+        """Test less with local storage file"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
 
         args = Namespace(
-            file=[basic_file],  # Cloud path
+            file=[basic_file],  # Local path
             QUIT_AT_EOF=False,
             quit_if_one_screen=False,
             ignore_case=False,
@@ -490,9 +472,9 @@ class TestLess:
         result = _search_backward(lines, "[invalid(", 3, ignore_case=False)
         assert result is None
 
-    def test_less_chop_long_lines(self, capsys, monkeypatch):
+    def test_less_chop_long_lines(self, workdir, capsys, monkeypatch):
         """Test --chop-long-lines option"""
-        long_line_file = WORKDIR / "long_line.txt"
+        long_line_file = workdir / "long_line.txt"
         long_line = "x" * 200 + "\n"
         long_line_file.write_text(long_line)
 

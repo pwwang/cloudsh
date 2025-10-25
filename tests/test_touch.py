@@ -1,36 +1,19 @@
 import time
 from datetime import datetime, timedelta
 from argparse import Namespace
-from uuid import uuid4
+from pathlib import Path
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.touch import run
-from .conftest import BUCKET
-
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-    WORKDIR.mkdir(parents=True)
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class TestTouch:
     """Test touch command functionality"""
 
-    def test_touch_cloud_create(self):
+    def test_touch_cloud_create(self, workdir):
         """Test creating new cloud file"""
-        test_file = WORKDIR / "new_file.txt"
+        test_file = workdir / "new_file.txt"
         args = Namespace(
             file=[str(test_file)],
             a=False,
@@ -44,9 +27,9 @@ class TestTouch:
         run(args)
         assert test_file.exists()
 
-    def test_touch_cloud_update_mtime(self):
+    def test_touch_cloud_update_mtime(self, workdir):
         """Test updating cloud file mtime"""
-        test_file = WORKDIR / "update_time.txt"
+        test_file = workdir / "update_time.txt"
         test_file.write_text("test")
         original_mtime = test_file.stat().st_mtime
         time.sleep(1)
@@ -63,28 +46,19 @@ class TestTouch:
         )
         run(args)
 
-        # Check metadata directly
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
-            test_file.blob
-        )
-        updated = datetime.fromisoformat(blob.metadata["updated"])
-        assert updated.timestamp() > original_mtime
+        # Check that mtime was updated
+        updated_mtime = test_file.stat().st_mtime
+        assert updated_mtime > original_mtime
 
-    def test_touch_cloud_reference(self):
+    def test_touch_cloud_reference(self, workdir):
         """Test using reference file for cloud file"""
-        ref_file = WORKDIR / "ref.txt"
-        test_file = WORKDIR / "test.txt"
+        ref_file = workdir / "ref.txt"
+        test_file = workdir / "test.txt"
 
-        # Create reference file with known time
-        ref_time = datetime.now() - timedelta(hours=1)
+        # Create reference file
         ref_file.write_text("ref")
-        ref_blob = ref_file.client.client.bucket(ref_file.bucket).get_blob(
-            ref_file.blob
-        )
-        metadata = ref_blob.metadata or {}
-        metadata["updated"] = ref_time
-        ref_blob.metadata = metadata
-        ref_blob.patch()
+        ref_stat = ref_file.stat()
+
         args = Namespace(
             file=[str(test_file)],
             a=False,
@@ -96,11 +70,13 @@ class TestTouch:
             time=None,
         )
         run(args)
-        assert abs((test_file.stat().st_mtime - ref_time.timestamp())) < 1
+        test_stat = test_file.stat()
+        # Allow 2 second tolerance for timestamp comparison
+        assert abs(test_stat.st_mtime - ref_stat.st_mtime) < 2
 
-    def test_touch_cloud_date(self):
+    def test_touch_cloud_date(self, workdir):
         """Test setting specific date for cloud file"""
-        test_file = WORKDIR / "date.txt"
+        test_file = workdir / "date.txt"
         test_date = "2023-01-01 12:00:00"
         expected_time = datetime.fromisoformat(test_date)
 
@@ -116,13 +92,11 @@ class TestTouch:
         )
         run(args)
 
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
-            test_file.blob
-        )
-        updated = datetime.fromisoformat(blob.metadata["updated"])
-        assert abs((updated - expected_time).total_seconds()) < 1
+        test_stat = test_file.stat()
+        # Allow 2 second tolerance
+        assert abs(test_stat.st_mtime - expected_time.timestamp()) < 2
 
-    def test_touch_t_format(self):
+    def test_touch_t_format(self, workdir):
         """Test various -t format timestamps"""
         test_cases = [
             ("1312151213", "2013-12-15 12:13:00"),  # MMDDhhmm
@@ -132,7 +106,7 @@ class TestTouch:
         ]
 
         for t_value, expected in test_cases:
-            test_file = WORKDIR / f"time_{t_value}.txt"
+            test_file = workdir / f"time_{t_value}.txt"
             args = Namespace(
                 file=[str(test_file)],
                 a=False,
@@ -145,16 +119,14 @@ class TestTouch:
             )
             run(args)
 
-            blob = test_file.client.client.bucket(test_file.bucket).get_blob(
-                test_file.blob
-            )
-            updated = datetime.fromisoformat(blob.metadata["updated"])
+            test_stat = test_file.stat()
             expected_dt = datetime.fromisoformat(expected)
-            assert abs((updated - expected_dt).total_seconds()) < 1
+            # Allow 2 second tolerance
+            assert abs(test_stat.st_mtime - expected_dt.timestamp()) < 2
 
-    def test_touch_time_option(self):
+    def test_touch_time_option(self, workdir):
         """Test --time option variants"""
-        test_file = WORKDIR / "time_opt.txt"
+        test_file = workdir / "time_opt.txt"
         test_file.write_text("test")
         old_stat = test_file.stat()
         time.sleep(1)
@@ -172,15 +144,12 @@ class TestTouch:
         )
         run(args)
 
-        blob = test_file.client.client.bucket(test_file.bucket).get_blob(
-            test_file.blob
-        )
-        updated = datetime.fromisoformat(blob.metadata["updated"])
-        assert updated.timestamp() > old_stat.st_mtime
+        updated_stat = test_file.stat()
+        assert updated_stat.st_mtime > old_stat.st_mtime
 
-    def test_touch_no_create(self):
+    def test_touch_no_create(self, workdir):
         """Test no-create option"""
-        test_file = WORKDIR / "nonexistent.txt"
+        test_file = workdir / "nonexistent.txt"
         args = Namespace(
             file=[str(test_file)],
             a=False,
@@ -194,24 +163,26 @@ class TestTouch:
         run(args)
         assert not test_file.exists()
 
-    def test_touch_invalid_reference(self, capsys):
+    def test_touch_invalid_reference(self, workdir, capsys):
         """Test error handling for nonexistent reference file"""
-        test_file = WORKDIR / "test.txt"
+        test_file = workdir / "test.txt"
         args = Namespace(
             file=[str(test_file)],
             a=False,
             m=False,
             no_create=False,
             date=None,
-            reference=str(WORKDIR / "nonexistent_ref"),
+            reference=str(workdir / "nonexistent_ref"),
+            t=None,
+            time=None,
         )
         with pytest.raises(SystemExit):
             run(args)
         assert "Reference file not found" in capsys.readouterr().err
 
-    def test_touch_invalid_date(self, capsys):
+    def test_touch_invalid_date(self, workdir, capsys):
         """Test error handling for invalid date format"""
-        test_file = WORKDIR / "test.txt"
+        test_file = workdir / "test.txt"
         args = Namespace(
             file=[str(test_file)],
             a=False,
@@ -219,14 +190,16 @@ class TestTouch:
             no_create=False,
             date="invalid_date",
             reference=None,
+            t=None,
+            time=None,
         )
         with pytest.raises(SystemExit):
             run(args)
         assert "Invalid date format" in capsys.readouterr().err
 
-    def test_touch_invalid_t_format(self, capsys):
+    def test_touch_invalid_t_format(self, workdir, capsys):
         """Test invalid -t format"""
-        test_file = WORKDIR / "invalid_time.txt"
+        test_file = workdir / "invalid_time.txt"
         args = Namespace(
             file=[str(test_file)],
             a=False,

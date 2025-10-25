@@ -1,27 +1,9 @@
 import sys
 from argparse import Namespace
-from uuid import uuid4
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.sink import run
-from .conftest import BUCKET
-
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-    WORKDIR.mkdir(parents=True)
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class TestSink:
@@ -55,9 +37,9 @@ class TestSink:
         run(args)
         assert outfile.read_text() == "test content"
 
-    def test_sink_cloud_file(self):
-        """Test sink to cloud file"""
-        outfile = WORKDIR / "cloud.txt"
+    def test_sink_local_file(self, workdir):
+        """Test sink to local file"""
+        outfile = workdir / "local.txt"
         args = Namespace(
             file=str(outfile),
             append=False,
@@ -77,9 +59,9 @@ class TestSink:
         run(args)
         assert outfile.read_text() == "existing\ntest content"
 
-    def test_sink_append_cloud(self):
-        """Test appending to cloud file"""
-        outfile = WORKDIR / "cloud_append.txt"
+    def test_sink_append_workdir(self, workdir):
+        """Test appending to workdir file"""
+        outfile = workdir / "workdir_append.txt"
         outfile.write_text("existing\n")
 
         args = Namespace(

@@ -1,27 +1,9 @@
 from argparse import Namespace
-from uuid import uuid4
-
-import pytest
-from yunpath import AnyPath
 from io import BytesIO
 
+import pytest
+
 from cloudsh.commands.cat import run
-from .conftest import BUCKET
-
-# Create workdir as module-level variable
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class MockStdin:
@@ -35,25 +17,25 @@ class TestCat:
     """Test cat command functionality"""
 
     @pytest.fixture
-    def basic_file(self):
+    def basic_file(self, workdir):
         """Create a basic test file"""
-        path = WORKDIR / "basic.txt"
+        path = workdir / "basic.txt"
         path.write_text("line1\nline2\nline3\n")
         return str(path)
 
     @pytest.fixture
-    def special_chars_file(self):
+    def special_chars_file(self, workdir):
         """Create a file with special characters"""
-        path = WORKDIR / "special.txt"
+        path = workdir / "special.txt"
         # Include tab, non-printing chars, and extended ASCII
         content = "normal\ttext\x01\x02\x7f\x80line\n"
         path.write_bytes(content.encode())
         return str(path)
 
     @pytest.fixture
-    def empty_lines_file(self):
+    def empty_lines_file(self, workdir):
         """Create a file with empty lines"""
-        path = WORKDIR / "empty_lines.txt"
+        path = workdir / "empty_lines.txt"
         path.write_text("line1\n\n\n\nline2\n\n\nline3\n")
         return str(path)
 
@@ -71,7 +53,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert captured.out == "line1\nline2\nline3\n"
 
@@ -89,7 +71,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "line1\nline2\nline3\n" in captured.out
         assert "line1\n\n\n\nline2\n\n\nline3\n" in captured.out
@@ -108,7 +90,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "     1\tline1\n" in captured.out
         assert "     2\tline2\n" in captured.out
@@ -128,7 +110,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         lines = captured.out.splitlines(True)
         numbered_lines = [line for line in lines if line.startswith("     ")]
@@ -148,7 +130,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert captured.out.count("\n\n\n") == 0  # No more than 2 consecutive newlines
 
@@ -166,7 +148,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "line1$\n" in captured.out
         assert "line2$\n" in captured.out
@@ -186,7 +168,7 @@ class TestCat:
             show_tabs=True,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "^I" in captured.out  # Tab shown as ^I
 
@@ -204,7 +186,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=True,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "^A" in captured.out  # Control char 0x01
         assert "^B" in captured.out  # Control char 0x02
@@ -225,7 +207,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)  # No return value needed
+        run(args)
         captured = capsys.readouterr()
         assert "^I" in captured.out  # Tabs
         assert "^A" in captured.out  # Control chars

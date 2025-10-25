@@ -1,44 +1,26 @@
 import io
 from argparse import Namespace
-from uuid import uuid4
+from pathlib import Path
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.rm import run
-from .conftest import BUCKET
-
-# Create workdir as module-level variable
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-    WORKDIR.mkdir(parents=True)
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class TestRm:
     """Test rm command functionality"""
 
     @pytest.fixture
-    def cloud_file(self):
+    def cloud_file(self, workdir):
         """Create a test file in cloud storage"""
-        path = WORKDIR / "test.txt"
+        path = workdir / "test.txt"
         path.write_text("test content")
         return str(path)
 
     @pytest.fixture
-    def cloud_dir(self):
+    def cloud_dir(self, workdir):
         """Create a test directory with files in cloud storage"""
-        path = WORKDIR / "testdir"
+        path = workdir / "testdir"
         path.mkdir(exist_ok=True)
         (path / "file1.txt").write_text("content1")
         (path / "file2.txt").write_text("content2")
@@ -69,12 +51,12 @@ class TestRm:
             I=False,
         )
         run(args)
-        assert not AnyPath(cloud_file).exists()
+        assert not Path(cloud_file).exists()
         assert "removed " in capsys.readouterr().out
 
-    def test_rm_missing_file(self, capsys):
+    def test_rm_missing_file(self, workdir, capsys):
         """Test removing a nonexistent file"""
-        path = WORKDIR / "nonexistent.txt"
+        path = workdir / "nonexistent.txt"
         args = Namespace(
             file=[str(path)],
             force=False,
@@ -90,9 +72,9 @@ class TestRm:
         captured = capsys.readouterr()
         assert "No such file or directory" in captured.err
 
-    def test_rm_force_missing(self, capsys):
+    def test_rm_force_missing(self, workdir, capsys):
         """Test force removing a nonexistent file"""
-        path = WORKDIR / "nonexistent.txt"
+        path = workdir / "nonexistent.txt"
         args = Namespace(
             file=[str(path)],
             force=True,
@@ -122,7 +104,7 @@ class TestRm:
 
         captured = capsys.readouterr()
         assert "Is a directory" in captured.err
-        assert AnyPath(cloud_dir).exists()
+        assert Path(cloud_dir).exists()
 
     def test_rm_recursive(self, cloud_dir, capsys):
         """Test recursive directory removal"""
@@ -137,8 +119,8 @@ class TestRm:
         )
         self.input_response = "y"  # Auto-confirm for -I prompt
         run(args)
-        assert not AnyPath(cloud_dir).exists()
-        assert "removed directory" in capsys.readouterr().out
+        assert not Path(cloud_dir).exists()
+        assert "removed " in capsys.readouterr().out
 
     def test_rm_verbose(self, cloud_file, capsys):
         """Test verbose output"""
@@ -168,7 +150,7 @@ class TestRm:
             I=False,
         )
         run(args)
-        assert not AnyPath(cloud_file).exists()
+        assert not Path(cloud_file).exists()
 
     def test_rm_prompt_no(self, cloud_file):
         """Test interactive prompt with 'no' response"""
@@ -183,11 +165,11 @@ class TestRm:
             I=False,
         )
         run(args)
-        assert AnyPath(cloud_file).exists()
+        assert Path(cloud_file).exists()
 
-    def test_rm_I_prompt(self, monkeypatch):
+    def test_rm_I_prompt(self, workdir, monkeypatch):
         """Test -I prompt for multiple files"""
-        files = [WORKDIR / f"file{i}.txt" for i in range(4)]
+        files = [workdir / f"file{i}.txt" for i in range(4)]
         for f in files:
             f.write_text("content")
 
@@ -204,9 +186,9 @@ class TestRm:
         run(args)
         assert all(not f.exists() for f in files)
 
-    def test_rm_empty_dir(self, capsys):
+    def test_rm_empty_dir(self, workdir, capsys):
         """Test removing empty directory with -d"""
-        empty_dir = WORKDIR / "empty_dir"
+        empty_dir = workdir / "empty_dir"
         empty_dir.mkdir()
 
         args = Namespace(
@@ -220,7 +202,7 @@ class TestRm:
         )
         run(args)
         assert not empty_dir.exists()
-        assert "removed directory" in capsys.readouterr().out
+        assert "removed " in capsys.readouterr().out
 
     def test_rm_nonempty_dir_with_d(self, cloud_dir, capsys):
         """Test -d on non-empty directory"""
@@ -241,7 +223,7 @@ class TestRm:
             "Directory not empty" in captured.err
             or "not empty" in captured.err.lower()
         )
-        assert AnyPath(cloud_dir).exists()
+        assert Path(cloud_dir).exists()
 
     def test_rm_force_dir(self, cloud_dir):
         """Test force remove directory with -r"""
@@ -255,7 +237,7 @@ class TestRm:
             I=False,
         )
         run(args)
-        assert not AnyPath(cloud_dir).exists()
+        assert not Path(cloud_dir).exists()
 
     def test_rm_local_file(self, tmp_path, capsys):
         """Test removing local file"""

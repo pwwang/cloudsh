@@ -1,35 +1,18 @@
 import sys
 from argparse import Namespace
-from uuid import uuid4
+from pathlib import Path
 
 import pytest
-from yunpath import AnyPath
 
 from cloudsh.commands.mkdir import run
-from .conftest import BUCKET
-
-WORKDIR = None
-
-
-def setup_module():
-    """Create test directory before any tests run"""
-    global WORKDIR
-    WORKDIR = AnyPath(f"{BUCKET}/cloudsh_test/{uuid4()}")
-    WORKDIR.mkdir(parents=True)
-
-
-def teardown_module():
-    """Remove test directory after all tests complete"""
-    if WORKDIR is not None:
-        WORKDIR.rmtree()
 
 
 class TestMkdir:
     """Test mkdir command functionality"""
 
-    def test_mkdir_basic(self):
+    def test_mkdir_basic(self, workdir):
         """Test basic directory creation"""
-        test_dir = WORKDIR / "test_dir"
+        test_dir = workdir / "test_dir"
         args = Namespace(
             directory=[str(test_dir)], parents=False, mode=None, verbose=False
         )
@@ -37,21 +20,21 @@ class TestMkdir:
         assert test_dir.exists()
         assert test_dir.is_dir()
 
-    def test_mkdir_parents(self):
+    def test_mkdir_parents(self, workdir):
         """Test creating directory with parents"""
-        test_dir = WORKDIR / "parent/child/grandchild"
+        test_dir = workdir / "parent/child/grandchild"
         args = Namespace(
             directory=[str(test_dir)], parents=True, mode=None, verbose=False
         )
         run(args)
         assert test_dir.exists()
         assert test_dir.is_dir()
-        assert (WORKDIR / "parent").is_dir()
-        assert (WORKDIR / "parent/child").is_dir()
+        assert (workdir / "parent").is_dir()
+        assert (workdir / "parent/child").is_dir()
 
-    def test_mkdir_multiple(self):
+    def test_mkdir_multiple(self, workdir):
         """Test creating multiple directories"""
-        dirs = [WORKDIR / f"dir{i}" for i in range(3)]
+        dirs = [workdir / f"dir{i}" for i in range(3)]
         args = Namespace(
             directory=[str(d) for d in dirs], parents=False, mode=None, verbose=False
         )
@@ -60,9 +43,9 @@ class TestMkdir:
             assert d.exists()
             assert d.is_dir()
 
-    def test_mkdir_verbose(self, capsys):
+    def test_mkdir_verbose(self, workdir, capsys):
         """Test verbose output"""
-        test_dir = WORKDIR / "verbose_dir"
+        test_dir = workdir / "verbose_dir"
         args = Namespace(
             directory=[str(test_dir)], parents=False, mode=None, verbose=True
         )
@@ -71,9 +54,9 @@ class TestMkdir:
         out = capsys.readouterr().out
         assert f"created directory '{test_dir}'" in out
 
-    def test_mkdir_exists(self, capsys):
+    def test_mkdir_exists(self, workdir, capsys):
         """Test directory already exists error"""
-        test_dir = WORKDIR / "existing"
+        test_dir = workdir / "existing"
         test_dir.mkdir()
         args = Namespace(
             directory=[str(test_dir)], parents=False, mode=None, verbose=False
@@ -84,9 +67,9 @@ class TestMkdir:
         assert "cannot create directory" in err
         assert "File exists" in err
 
-    def test_mkdir_parents_exists(self):
+    def test_mkdir_parents_exists(self, workdir):
         """Test no error when directory exists with --parents"""
-        test_dir = WORKDIR / "parent_existing"
+        test_dir = workdir / "parent_existing"
         test_dir.mkdir()
         args = Namespace(
             directory=[str(test_dir)], parents=True, mode=None, verbose=False
@@ -136,9 +119,9 @@ class TestMkdir:
         assert "cannot create directory" in err
         assert "Permission denied" in err
 
-    def test_mkdir_mixed_paths(self, tmp_path):
+    def test_mkdir_mixed_paths(self, workdir, tmp_path):
         """Test creating both local and cloud directories"""
-        cloud_dir = WORKDIR / "cloud_mixed"
+        cloud_dir = workdir / "cloud_mixed"
         local_dir = tmp_path / "local_mixed"
         args = Namespace(
             directory=[str(cloud_dir), str(local_dir)],
@@ -150,9 +133,9 @@ class TestMkdir:
         assert cloud_dir.exists()
         assert local_dir.exists()
 
-    def test_mkdir_parents_path_is_file(self, capsys):
+    def test_mkdir_parents_path_is_file(self, workdir, capsys):
         """Test mkdir -p when part of path is a file"""
-        file_path = WORKDIR / "file"
+        file_path = workdir / "file"
         file_path.write_text("test")
         test_dir = file_path / "dir"
         args = Namespace(
