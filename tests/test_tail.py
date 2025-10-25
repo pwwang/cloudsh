@@ -609,3 +609,191 @@ class TestTail:
         run(args)
         captured = capsys.readouterr()
         assert "content from stdin" in captured.out
+
+    def test_tail_cloud_file_basic(self, workdir, capsys):
+        """Test tail on cloud file"""
+        cloud_file = workdir / "cloud_tail.txt"
+        lines = b"line1\nline2\nline3\nline4\nline5\n"
+        lines += b"line6\nline7\nline8\nline9\nline10\n"
+        cloud_file.write_bytes(lines)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes=None,
+            lines="3",
+            quiet=False,
+            verbose=False,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        assert "line8\n" in captured.out
+        assert "line9\n" in captured.out
+        assert "line10\n" in captured.out
+        assert "line7" not in captured.out
+
+    def test_tail_cloud_file_bytes(self, workdir, capsys):
+        """Test tail on cloud file with byte count"""
+        cloud_file = workdir / "cloud_tail_bytes.txt"
+        content = b"0123456789abcdefghij"
+        cloud_file.write_bytes(content)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes="5",
+            lines=None,
+            quiet=False,
+            verbose=False,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        assert captured.out == "fghij"
+
+    def test_tail_cloud_file_bytes_from_start(self, workdir, capsys):
+        """Test tail on cloud file with +bytes (from start)"""
+        cloud_file = workdir / "cloud_tail_bytes_start.txt"
+        content = b"0123456789abcdefghij"
+        cloud_file.write_bytes(content)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes="+6",
+            lines=None,
+            quiet=False,
+            verbose=False,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        # Should output from 6th byte onwards (index 5)
+        assert captured.out == "56789abcdefghij"
+
+    def test_tail_cloud_file_lines_from_start(self, workdir, capsys):
+        """Test tail on cloud file with +lines (from start)"""
+        cloud_file = workdir / "cloud_tail_lines_start.txt"
+        content = b"line1\nline2\nline3\nline4\nline5\n"
+        cloud_file.write_bytes(content)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes=None,
+            lines="+3",
+            quiet=False,
+            verbose=False,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        # Should output from 3rd line onwards
+        assert "line3\n" in captured.out
+        assert "line4\n" in captured.out
+        assert "line5\n" in captured.out
+        assert "line1" not in captured.out
+        assert "line2" not in captured.out
+
+    def test_tail_cloud_file_zero_terminated(self, workdir, capsys):
+        """Test tail on cloud file with zero-terminated lines"""
+        cloud_file = workdir / "cloud_tail_zero.txt"
+        content = b"rec1\0rec2\0rec3\0rec4\0rec5\0"
+        cloud_file.write_bytes(content)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes=None,
+            lines="2",
+            quiet=False,
+            verbose=False,
+            zero_terminated=True,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        assert b"rec4\0" in captured.out.encode()
+        assert b"rec5\0" in captured.out.encode()
+
+    def test_tail_cloud_file_with_verbose(self, workdir, capsys):
+        """Test tail on cloud file with verbose (shows header)"""
+        cloud_file = workdir / "cloud_tail_verbose.txt"
+        content = b"line1\nline2\nline3\n"
+        cloud_file.write_bytes(content)
+
+        args = Namespace(
+            file=[str(cloud_file)],
+            bytes=None,
+            lines="2",
+            quiet=False,
+            verbose=True,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        assert f"==> {cloud_file} <==" in captured.out
+        assert "line2\n" in captured.out
+        assert "line3\n" in captured.out
+
+    def test_tail_cloud_multiple_files(self, workdir, capsys):
+        """Test tail on multiple cloud files"""
+        cloud_file1 = workdir / "cloud1.txt"
+        cloud_file2 = workdir / "cloud2.txt"
+        cloud_file1.write_bytes(b"file1_line1\nfile1_line2\nfile1_line3\n")
+        cloud_file2.write_bytes(b"file2_line1\nfile2_line2\n")
+
+        args = Namespace(
+            file=[str(cloud_file1), str(cloud_file2)],
+            bytes=None,
+            lines="2",
+            quiet=False,
+            verbose=False,
+            zero_terminated=False,
+            follow=False,
+            F=False,
+            retry=False,
+            pid=None,
+            sleep_interval=None,
+            max_unchanged_stats=None,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        # Should show headers for multiple files
+        assert f"==> {cloud_file1} <==" in captured.out
+        assert f"==> {cloud_file2} <==" in captured.out
+        assert "file1_line2\n" in captured.out
+        assert "file1_line3\n" in captured.out
+        assert "file2_line1\n" in captured.out
+        assert "file2_line2\n" in captured.out

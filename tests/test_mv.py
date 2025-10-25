@@ -588,3 +588,190 @@ class TestMv:
         run(args)
         assert src.exists()  # Should not move older file
         assert dst.read_text() == "dest2"
+
+    def test_mv_source_not_exists(self, workdir, capsys):
+        """Test moving non-existent source"""
+        src = workdir / "nonexistent.txt"
+        dst = workdir / "dest.txt"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dst),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        with pytest.raises(SystemExit):
+            run(args)
+
+        captured = capsys.readouterr()
+        assert "No such file or directory" in captured.err
+
+    def test_mv_cloud_dir_to_cloud_dir(self, workdir):
+        """Test moving cloud directory to another cloud directory"""
+        src_dir = workdir / "src_cloud_dir"
+        src_dir.mkdir()
+        (src_dir / "file1.txt").write_text("content1")
+        (src_dir / "subdir").mkdir()
+        (src_dir / "subdir" / "file2.txt").write_text("content2")
+
+        dst_dir = workdir / "dst_cloud_dir"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src_dir)],
+            DEST=str(dst_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        run(args)
+        assert not src_dir.exists()
+        assert dst_dir.exists()
+        assert (dst_dir / "file1.txt").exists()
+        assert (dst_dir / "subdir" / "file2.txt").exists()
+
+    def test_mv_cloud_to_local_dir(self, workdir, tmp_path):
+        """Test moving cloud directory to local directory"""
+        src_dir = workdir / "src_cloud"
+        src_dir.mkdir()
+        (src_dir / "file1.txt").write_text("content1")
+        (src_dir / "subdir").mkdir()
+        (src_dir / "subdir" / "file2.txt").write_text("content2")
+
+        dst_dir = tmp_path / "dst_local"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src_dir)],
+            DEST=str(dst_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        run(args)
+        assert not src_dir.exists()
+        assert dst_dir.exists()
+        assert (dst_dir / "file1.txt").exists()
+        assert (dst_dir / "subdir" / "file2.txt").exists()
+
+    def test_mv_local_to_cloud_dir(self, tmp_path, workdir):
+        """Test moving local directory to cloud directory"""
+        src_dir = tmp_path / "src_local"
+        src_dir.mkdir()
+        (src_dir / "file1.txt").write_text("content1")
+        (src_dir / "subdir").mkdir()
+        (src_dir / "subdir" / "file2.txt").write_text("content2")
+
+        dst_dir = workdir / "dst_cloud"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src_dir)],
+            DEST=str(dst_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        run(args)
+        assert not src_dir.exists()
+        assert dst_dir.exists()
+        assert (dst_dir / "file1.txt").exists()
+        assert (dst_dir / "subdir" / "file2.txt").exists()
+
+    def test_mv_with_verbose_cloud(self, workdir, capsys):
+        """Test verbose output for cloud moves"""
+        src = workdir / "src_verbose.txt"
+        src.write_text("content")
+        dst = workdir / "dst_verbose.txt"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dst),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=True,
+        )
+
+        run(args)
+        captured = capsys.readouterr()
+        assert "renamed" in captured.out
+        assert str(src) in captured.out
+        assert str(dst) in captured.out
+
+    def test_mv_multiple_sources_not_to_directory(self, workdir, capsys):
+        """Test moving multiple sources to non-directory target"""
+        src1 = workdir / "src1.txt"
+        src2 = workdir / "src2.txt"
+        src1.write_text("content1")
+        src2.write_text("content2")
+        dst = workdir / "dst.txt"
+        dst.write_text("existing")
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src1), str(src2)],
+            DEST=str(dst),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        with pytest.raises(SystemExit):
+            run(args)
+
+        captured = capsys.readouterr()
+        assert "is not a directory" in captured.err
+
+    def test_mv_target_directory_create_if_not_exists(self, workdir):
+        """Test that target directory is created if it doesn't exist"""
+        src = workdir / "src.txt"
+        src.write_text("content")
+        dst_dir = workdir / "new_target_dir"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=None,
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=str(dst_dir),
+            no_target_directory=False,
+            update=False,
+            verbose=False,
+        )
+
+        run(args)
+        assert dst_dir.exists()
+        assert (dst_dir / "src.txt").exists()

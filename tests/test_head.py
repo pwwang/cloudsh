@@ -449,3 +449,178 @@ def test_head_multiple_local_files_with_headers(workdir, capsys):
     assert f"==> {path2} <==" in captured.out
     assert "file1\n" in captured.out
     assert "file2\n" in captured.out
+
+
+def test_head_cloud_file_basic(workdir, capsys):
+    """Test head on cloud file with basic line count"""
+    cloud_file = workdir / "cloud_head_test.txt"
+    content = b"line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10\n"
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes=None,
+        lines="3",
+        quiet=False,
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    assert "line1\n" in captured.out
+    assert "line2\n" in captured.out
+    assert "line3\n" in captured.out
+    assert "line4" not in captured.out
+
+
+def test_head_cloud_file_negative_lines(workdir, capsys):
+    """Test head on cloud file with negative line count"""
+    cloud_file = workdir / "cloud_head_neg.txt"
+    content = b"line1\nline2\nline3\nline4\nline5\n"
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes=None,
+        lines="-2",  # All but last 2 lines
+        quiet=False,
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    assert "line1\n" in captured.out
+    assert "line2\n" in captured.out
+    assert "line3\n" in captured.out
+    assert "line4" not in captured.out
+    assert "line5" not in captured.out
+
+
+def test_head_cloud_file_bytes(workdir, capsys):
+    """Test head on cloud file with byte count"""
+    cloud_file = workdir / "cloud_head_bytes.txt"
+    content = b"abcdefghijklmnopqrstuvwxyz"
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes="10",
+        lines=None,
+        quiet=False,
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    # Should output first 10 bytes
+    assert captured.out == "abcdefghij"
+
+
+def test_head_cloud_file_negative_bytes(workdir, capsys):
+    """Test head on cloud file with negative byte count"""
+    cloud_file = workdir / "cloud_head_neg_bytes.txt"
+    content = b"abcdefghijklmnopqrstuvwxyz"
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes="-10",  # All but last 10 bytes
+        lines=None,
+        quiet=False,
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    # Should output all but last 10 bytes: abcdefghijklmnop
+    assert captured.out == "abcdefghijklmnop"
+
+
+def test_head_cloud_file_zero_terminated(workdir, capsys):
+    """Test head on cloud file with zero-terminated records"""
+    cloud_file = workdir / "cloud_head_zero.txt"
+    content = b"rec1\0rec2\0rec3\0rec4\0rec5\0"
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes=None,
+        lines="2",
+        quiet=False,
+        verbose=False,
+        zero_terminated=True,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    # First 2 zero-terminated records
+    assert b"rec1\0" in captured.out.encode()
+    assert b"rec2\0" in captured.out.encode()
+
+
+def test_head_cloud_file_multiple_with_headers(workdir, capsys):
+    """Test head on multiple cloud files with headers"""
+    cloud_file1 = workdir / "cloud1.txt"
+    cloud_file2 = workdir / "cloud2.txt"
+    cloud_file1.write_bytes(b"file1_line1\nfile1_line2\n")
+    cloud_file2.write_bytes(b"file2_line1\nfile2_line2\n")
+
+    args = Namespace(
+        file=[str(cloud_file1), str(cloud_file2)],
+        bytes=None,
+        lines="1",
+        quiet=False,
+        verbose=False,  # Should still show headers for multiple files
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    assert f"==> {cloud_file1} <==" in captured.out
+    assert f"==> {cloud_file2} <==" in captured.out
+    assert "file1_line1\n" in captured.out
+    assert "file2_line1\n" in captured.out
+
+
+def test_head_cloud_file_quiet_mode(workdir, capsys):
+    """Test head on cloud file in quiet mode (no headers)"""
+    cloud_file1 = workdir / "cloud_quiet1.txt"
+    cloud_file2 = workdir / "cloud_quiet2.txt"
+    cloud_file1.write_bytes(b"content1\n")
+    cloud_file2.write_bytes(b"content2\n")
+
+    args = Namespace(
+        file=[str(cloud_file1), str(cloud_file2)],
+        bytes=None,
+        lines="1",
+        quiet=True,  # Suppress headers
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    assert "==>" not in captured.out  # No headers
+    assert "content1\n" in captured.out
+    assert "content2\n" in captured.out
+
+
+def test_head_cloud_file_with_chunks(workdir, capsys):
+    """Test head on cloud file that requires chunked reading"""
+    cloud_file = workdir / "cloud_large.txt"
+    # Create content larger than chunk size (8192 bytes)
+    lines = [f"line{i}\n".encode() for i in range(500)]
+    content = b"".join(lines)
+    cloud_file.write_bytes(content)
+
+    args = Namespace(
+        file=[str(cloud_file)],
+        bytes=None,
+        lines="10",
+        quiet=False,
+        verbose=False,
+        zero_terminated=False,
+    )
+    run(args)
+    captured = capsys.readouterr()
+    # Should have first 10 lines
+    for i in range(10):
+        assert f"line{i}\n" in captured.out
+    assert "line10\n" not in captured.out
