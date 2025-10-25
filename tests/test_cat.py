@@ -300,3 +300,43 @@ class TestCat:
         with pytest.raises(SystemExit) as exc_info:
             run(args)
         assert exc_info.value.code == 130
+
+    def test_cat_e_option(self, special_chars_file, capsys):
+        """Test -e option (show non-printing and ends)"""
+        args = Namespace(
+            file=[special_chars_file],
+            show_all=False,
+            number_nonblank=False,
+            e=True,
+            show_ends=False,
+            number=False,
+            squeeze_blank=False,
+            t=False,
+            show_tabs=False,
+            show_nonprinting=False,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        # -e should enable both show_nonprinting and show_ends
+        assert "$" in captured.out  # Line endings
+        assert "^" in captured.out  # Non-printing chars
+
+    def test_cat_t_option(self, special_chars_file, capsys):
+        """Test -t option (show non-printing and tabs)"""
+        args = Namespace(
+            file=[special_chars_file],
+            show_all=False,
+            number_nonblank=False,
+            e=False,
+            show_ends=False,
+            number=False,
+            squeeze_blank=False,
+            t=True,
+            show_tabs=False,
+            show_nonprinting=False,
+        )
+        run(args)
+        captured = capsys.readouterr()
+        # -t should enable both show_nonprinting and show_tabs
+        assert "^I" in captured.out  # Tabs shown as ^I
+        assert "^" in captured.out  # Non-printing chars

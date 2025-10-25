@@ -384,3 +384,92 @@ class TestCp:
         run(args)
         assert local_dest.exists()
         assert local_dest.read_text() == "cloud content"
+
+    def test_cp_parent_not_exists(self, source_file, workdir, capsys):
+        """Test copying to non-existent parent directory"""
+        dest = workdir / "nonexistent/dest.txt"
+        args = Namespace(
+            SOURCE=[source_file],
+            DEST=str(dest),
+            recursive=False,
+            interactive=False,
+            force=False,
+            no_clobber=False,
+            verbose=False,
+            preserve=False,
+            target_directory=None,
+            no_target_directory=False,
+            parents=False,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            run(args)
+        assert exc_info.value.code == 1
+        assert "No such file or directory" in capsys.readouterr().err
+
+    def test_cp_directory_without_recursive(self, source_dir, workdir, capsys):
+        """Test copying directory without -r flag"""
+        dest = workdir / "dest"
+        args = Namespace(
+            SOURCE=[source_dir],
+            DEST=str(dest),
+            recursive=False,
+            interactive=False,
+            force=False,
+            no_clobber=False,
+            verbose=False,
+            preserve=False,
+            target_directory=None,
+            no_target_directory=False,
+            parents=False,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            run(args)
+        assert exc_info.value.code == 1
+        assert "-r not specified" in capsys.readouterr().err
+
+    def test_cp_multiple_sources_to_non_directory(self, source_file, workdir, capsys):
+        """Test error when copying multiple sources to non-directory"""
+        src1 = workdir / "src1.txt"
+        src1.write_text("content1")
+        src2 = workdir / "src2.txt"
+        src2.write_text("content2")
+        dest = workdir / "dest.txt"
+
+        args = Namespace(
+            SOURCE=[str(src1), str(src2)],
+            DEST=str(dest),
+            recursive=False,
+            interactive=False,
+            force=False,
+            no_clobber=False,
+            verbose=False,
+            preserve=False,
+            target_directory=None,
+            no_target_directory=False,
+            parents=False,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            run(args)
+        assert exc_info.value.code == 1
+        assert "target must be a directory" in capsys.readouterr().err
+
+    def test_cp_force_overwrite(self, source_file, workdir):
+        """Test force overwriting existing file"""
+        dest = workdir / "dest.txt"
+        dest.write_text("old content")
+
+        args = Namespace(
+            SOURCE=[source_file],
+            DEST=str(dest),
+            recursive=False,
+            interactive=False,
+            force=True,
+            no_clobber=False,
+            verbose=False,
+            preserve=False,
+            target_directory=None,
+            no_target_directory=False,
+            parents=False,
+        )
+        run(args)
+        assert dest.read_text() == "test content"
