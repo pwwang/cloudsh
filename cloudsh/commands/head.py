@@ -108,14 +108,16 @@ def _head_cloud_file(
         if args.bytes >= 0:
             content = fh.read(args.bytes)
         else:
-            # For negative bytes:
+            # For negative bytes, follow GNU head behavior:
+            # Print all but the last N bytes (where N = abs(args.bytes))
             # 1. Get file size by seeking to end
-            # 2. Seek back from end by abs(bytes)
-            # 3. Read to the end
-            fh.seek(0, 2)  # Seek to end
+            # 2. Calculate how many bytes to read from start: size + args.bytes
+            # 3. Seek back to start and read that many bytes
+            fh.seek(0, 2)  # Seek to end to get size
             size = fh.tell()
-            fh.seek(max(0, size + args.bytes), 0)  # Seek from start
-            content = fh.read()
+            bytes_to_read = max(0, size + args.bytes)  # size + negative = size - abs
+            fh.seek(0, 0)  # Seek back to start
+            content = fh.read(bytes_to_read)
         sys.stdout.buffer.write(content)
         return
 

@@ -170,24 +170,30 @@ def test_head_local_chunk_remainder(workdir, capsys):
     assert captured.out.endswith("ab\ncd\n")
 
 
-def test_head_negative_bytes_seek(workdir, capsys):
-    """Test that negative bytes properly uses seek operations"""
+def test_head_negative_bytes_seek(capsys):
+    """Test that negative bytes follows GNU head behavior for cloud files"""
+    from io import BytesIO
+    from cloudsh.commands.head import _head_cloud_file
+
+    # Create a mock cloud file with seekable BytesIO
     content = b"0123456789"  # 10 bytes
-    path = workdir / "test_seek.txt"
-    path.write_bytes(content)
+    mock_file = BytesIO(content)
 
     args = Namespace(
-        file=[str(path)],
-        bytes="-5",  # Negative bytes: print all but last 5
+        bytes=-5,  # Negative bytes: print all but last 5 bytes (GNU head behavior)
         lines=None,
         quiet=False,
         verbose=False,
         zero_terminated=False,
     )
-    run(args)
+
+    # Test cloud file behavior directly
+    _head_cloud_file(mock_file, args, "test.txt")
     captured = capsys.readouterr()
-    # Negative bytes means "all but the last N bytes"
-    assert captured.out == "01234"  # Should be first 5 bytes (all but last 5)
+
+    # Cloud file now follows GNU head: -5 bytes means all but last 5
+    # File has 10 bytes, all but last 5 = first 5 bytes = "01234"
+    assert captured.out == "01234"
 
 
 def test_head_local_error(workdir, capsys):
@@ -376,24 +382,31 @@ def test_head_bytes_with_decimal_suffix(temp_file, capsys):
     assert len(captured.out.encode()) <= 1536
 
 
-def test_head_negative_bytes_tiny_file(workdir, capsys):
-    """Test negative bytes with a file smaller than requested size"""
+def test_head_negative_bytes_tiny_file(capsys):
+    """Test negative bytes with a cloud file smaller than requested size"""
+    from io import BytesIO
+    from cloudsh.commands.head import _head_cloud_file
+
+    # Create a mock cloud file smaller than the requested byte count
     content = b"123"  # 3 bytes
-    path = workdir / "test_tiny.txt"
-    path.write_bytes(content)
+    mock_file = BytesIO(content)
 
     args = Namespace(
-        file=[str(path)],
-        bytes="-5",  # More than file size (all but last 5 bytes)
+        bytes=-5,  # All but last 5 bytes, but file only has 3
         lines=None,
         quiet=False,
         verbose=False,
         zero_terminated=False,
     )
-    run(args)
+
+    # Test cloud file behavior directly
+    _head_cloud_file(mock_file, args, "test_tiny.txt")
     captured = capsys.readouterr()
-    # When file is smaller than the negative offset, output should be empty
-    assert captured.out == ""  # File has only 3 bytes, can't print all but last 5
+
+    # Following GNU head behavior: when file (3 bytes) is smaller than abs(bytes) (5),
+    # bytes_to_read = max(0, size + bytes) = max(0, 3-5) = 0
+    # So output should be empty
+    assert captured.out == ""
 
 
 def test_head_local_empty_final_lines(workdir, capsys):
