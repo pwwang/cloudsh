@@ -143,7 +143,7 @@ def _display_lines(
 
         # Add line numbers if requested
         if args.LINE_NUMBERS or args.line_numbers:
-            sys.stdout.write(f"{i+1:6} ")
+            sys.stdout.write(f"{i + 1:6} ")
 
         # Handle long lines
         if args.chop_long_lines:
@@ -383,7 +383,8 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                 current_line -= screen_lines - 1
                 current_line = max(0, current_line)
                 eof_count = 0
-            elif ch == '\r' or ch == '\n' or ch == 'j' or ch == '\x0e':  # Enter, j, or Ctrl+N
+            elif (ch == '\r' or ch == '\n' or ch == 'j'
+                  or ch == '\x0e'):  # Enter, j, or Ctrl+N
                 # Forward one line
                 if current_line < total_lines - 1:
                     current_line += 1
@@ -424,7 +425,10 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                     if found is not None:
                         current_line = found
                     else:
-                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _show_status(
+                            filename, current_line, total_lines,
+                            "Pattern not found"
+                        )
                         _get_char()
                 eof_count = 0
             elif ch == '?':
@@ -441,7 +445,10 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                     if found is not None:
                         current_line = found
                     else:
-                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _show_status(
+                            filename, current_line, total_lines,
+                            "Pattern not found"
+                        )
                         _get_char()
                 eof_count = 0
             elif ch == 'n':
@@ -456,7 +463,10 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                     if found is not None:
                         current_line = found
                     else:
-                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _show_status(
+                            filename, current_line, total_lines,
+                            "Pattern not found"
+                        )
                         _get_char()
                 eof_count = 0
             elif ch == 'N':
@@ -471,7 +481,10 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                     if found is not None:
                         current_line = found
                     else:
-                        _show_status(filename, current_line, total_lines, "Pattern not found")
+                        _show_status(
+                            filename, current_line, total_lines,
+                            "Pattern not found"
+                        )
                         _get_char()
                 eof_count = 0
             elif ch == 'h' or ch == 'H':

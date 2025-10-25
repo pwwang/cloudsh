@@ -11,7 +11,6 @@ from cloudsh.commands.tail import run, _print_header
 
 import multiprocessing
 from pathlib import Path
-from unittest.mock import patch
 
 
 class TailTester:
@@ -521,7 +520,9 @@ class TestTail:
         assert "recreated" not in final_content
         assert "initial" in final_content
 
-    @pytest.mark.skip(reason="Cannot patch stat method on PosixPath - read-only attribute")
+    @pytest.mark.skip(
+        reason="Cannot patch stat method on PosixPath - read-only attribute"
+    )
     def test_tail_follow_stat_error(self, tail_tester, workdir):
         """Test handling of stat errors during follow"""
         # This test is skipped because Path.stat is a read-only attribute

@@ -640,4 +640,3 @@ class TestLess:
         # Should eventually quit with 'q'
         captured = capsys.readouterr()
         assert len(captured.out) > 0
-

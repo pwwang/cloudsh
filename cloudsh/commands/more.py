@@ -264,7 +264,9 @@ def run(args: Namespace) -> None:
 
                 # Print separator between files if there are multiple files
                 if len(files) > 1 and i < len(files) - 1:
-                    sys.stdout.write(f"\n::::::::::::::\n{files[i+1]}\n::::::::::::::\n")
+                    sys.stdout.write(
+                        f"\n::::::::::::::\n{files[i + 1]}\n::::::::::::::\n"
+                    )
                     sys.stdout.flush()
 
             except KeyboardInterrupt:
