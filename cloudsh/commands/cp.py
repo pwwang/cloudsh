@@ -6,6 +6,7 @@ import sys
 import shutil
 from typing import TYPE_CHECKING
 from yunpath import AnyPath, CloudPath
+from cloudpathlib import GSPath, S3Path, AzureBlobPath
 from cloudpathlib.exceptions import OverwriteNewerCloudError
 
 from ..utils import PACKAGE
@@ -22,6 +23,76 @@ def _prompt_overwrite(path: str) -> bool:
             return True
         if response in ["n", "no"]:
             return False
+
+
+def _cloud_to_cloud_copy(src: CloudPath, dst: CloudPath, force: bool = False) -> None:
+    """Copy between cloud paths using native cloud provider APIs.
+
+    This function uses the official cloud provider APIs to copy files directly
+    on the cloud provider's infrastructure, avoiding local caching.
+
+    Args:
+        src: Source cloud path
+        dst: Destination cloud path
+        force: Whether to force overwrite existing files
+    """
+    # For GCS to GCS copy, use the native copy_blob API
+    if isinstance(src, GSPath) and isinstance(dst, GSPath):
+        src_client = src.client.client  # Get the google.cloud.storage.Client
+        src_bucket_name = src.bucket
+        src_blob_name = src.blob
+        dst_bucket_name = dst.bucket
+        dst_blob_name = dst.blob
+
+        src_bucket = src_client.bucket(src_bucket_name)
+        src_blob = src_bucket.blob(src_blob_name)
+        dst_bucket = src_client.bucket(dst_bucket_name)
+
+        # Use the native copy_blob API for server-side copy
+        src_bucket.copy_blob(
+            src_blob,
+            dst_bucket,
+            new_name=dst_blob_name,
+        )
+    # For S3 to S3 copy, use the native copy API
+    elif isinstance(src, S3Path) and isinstance(dst, S3Path):
+        s3_client = src.client.client  # Get the boto3 S3 client
+        src_bucket = src.bucket
+        src_key = src.key
+        dst_bucket = dst.bucket
+        dst_key = dst.key
+
+        copy_source = {
+            'Bucket': src_bucket,
+            'Key': src_key
+        }
+
+        # Use the native S3 copy_object API for server-side copy
+        s3_client.copy_object(
+            CopySource=copy_source,
+            Bucket=dst_bucket,
+            Key=dst_key
+        )
+    # For Azure to Azure copy, use the native copy API
+    elif isinstance(src, AzureBlobPath) and isinstance(dst, AzureBlobPath):
+        # Get blob clients
+        src_blob_client = src.client.client.get_blob_client(
+            container=src.container,
+            blob=src.blob
+        )
+        dst_blob_client = dst.client.client.get_blob_client(
+            container=dst.container,
+            blob=dst.blob
+        )
+
+        # Start the copy operation
+        dst_blob_client.start_copy_from_url(src_blob_client.url)
+    else:
+        # Fall back to cloudpathlib's copy for cross-cloud copies
+        if force:
+            src.copy(dst, force_overwrite_to_cloud=True)
+        else:
+            src.copy(dst)
 
 
 def _copy_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
@@ -86,11 +157,8 @@ def _copy_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
                 # Handle cloud paths
                 if isinstance(src, CloudPath):
                     if isinstance(dst, CloudPath):
-                        # Cloud to cloud copy
-                        if args.force:
-                            src.copy(dst, force_overwrite_to_cloud=True)
-                        else:
-                            src.copy(dst)
+                        # Cloud to cloud copy - use native APIs to avoid local cache
+                        _cloud_to_cloud_copy(src, dst, force=args.force)
                     else:
                         # Cloud to local copy
                         src.download_to(dst)
@@ -107,7 +175,10 @@ def _copy_path(src: AnyPath, dst: AnyPath, args: Namespace) -> None:
                             shutil.copy(src, dst)
             except OverwriteNewerCloudError:
                 if args.force:
-                    src.copy(dst, force_overwrite_to_cloud=True)
+                    if isinstance(src, CloudPath) and isinstance(dst, CloudPath):
+                        _cloud_to_cloud_copy(src, dst, force=True)
+                    else:
+                        src.copy(dst, force_overwrite_to_cloud=True)
                 else:
                     raise
 
