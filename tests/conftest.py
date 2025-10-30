@@ -14,3 +14,24 @@ def workdir(tmp_path_factory):
     """
     workdir = tmp_path_factory.mktemp("cloudsh_test")
     return workdir
+
+
+@pytest.fixture
+def cloud_workdir(request):
+    """
+    Create a temporary cloud workdir for tests.
+    Uses a cloud bucket specified by BUCKET environment variable.
+    """
+    from yunpath import GSPath
+
+    parent_workdir = GSPath(BUCKET) / "cloudsh_test"
+    # create a unique subdirectory for each test function
+    # also add uuid to avoid collisions in parallel test runs
+    cloud_workdir = parent_workdir.joinpath(
+        f"{request.node.name}_"
+        f"{request.node.callspec.id if hasattr(request.node, 'callspec') else 'single'}"
+    )
+    cloud_workdir.mkdir(parents=True, exist_ok=True)
+    yield cloud_workdir
+    # Cleanup after tests
+    cloud_workdir.rmtree()

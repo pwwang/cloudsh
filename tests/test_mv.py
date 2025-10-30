@@ -775,3 +775,197 @@ class TestMv:
         run(args)
         assert dst_dir.exists()
         assert (dst_dir / "src.txt").exists()
+
+    def test_mv_cloud_file_to_cloud_file(self, cloud_workdir):
+        """Test moving between two cloud paths (using native cloud APIs)"""
+        src = cloud_workdir / "cloud_src.txt"
+        src.write_text("cloud to cloud content")
+        dest = cloud_workdir / "cloud_dest.txt"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dest),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src.exists(), "Source file should be deleted after move"
+        assert dest.exists(), "Destination file should exist after move"
+        assert dest.read_text() == "cloud to cloud content"
+
+    def test_mv_cloud_file_to_cloud_dir_exists(self, cloud_workdir):
+        """Test moving cloud file into existing cloud directory"""
+        src = cloud_workdir / "cloud_file.txt"
+        src.write_text("file content")
+
+        dest_dir = cloud_workdir / "cloud_dest_dir"
+        dest_dir.mkdir()
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dest_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src.exists(), "Source file should be deleted after move"
+        assert (dest_dir / "cloud_file.txt").exists()
+        assert (dest_dir / "cloud_file.txt").read_text() == "file content"
+
+    def test_mv_cloud_dir_to_cloud_dir_exists(self, cloud_workdir):
+        """Test moving cloud directory to existing cloud directory"""
+        src_dir = cloud_workdir / "cloud_src_dir"
+        src_dir.mkdir()
+        (src_dir / "file1.txt").write_text("cloud1")
+        (src_dir / "file2.txt").write_text("cloud2")
+        (src_dir / "subdir").mkdir()
+        (src_dir / "subdir" / "file3.txt").write_text("cloud3")
+
+        dest_dir = cloud_workdir / "cloud_dest_dir"
+        dest_dir.mkdir()
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src_dir)],
+            DEST=str(dest_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src_dir.exists(), "Source directory should be deleted after move"
+        assert (dest_dir / "cloud_src_dir").exists()
+        assert (dest_dir / "cloud_src_dir" / "file1.txt").exists()
+        assert (dest_dir / "cloud_src_dir" / "file2.txt").exists()
+        assert (dest_dir / "cloud_src_dir" / "subdir" / "file3.txt").exists()
+        assert (dest_dir / "cloud_src_dir" / "file1.txt").read_text() == "cloud1"
+
+    def test_mv_cloud_dir_to_cloud_dir_not_exists(self, cloud_workdir):
+        """Test moving cloud directory to non-existing cloud directory (rename)"""
+        src_dir = cloud_workdir / "cloud_src_dir2"
+        src_dir.mkdir()
+        (src_dir / "file1.txt").write_text("cloudA")
+        (src_dir / "file2.txt").write_text("cloudB")
+        (src_dir / "subdir").mkdir()
+        (src_dir / "subdir" / "file3.txt").write_text("cloudC")
+
+        dest_dir = cloud_workdir / "cloud_dest_dir2"
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src_dir)],
+            DEST=str(dest_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src_dir.exists(), "Source directory should be deleted after move"
+        assert dest_dir.exists()
+        assert (dest_dir / "file1.txt").exists()
+        assert (dest_dir / "file2.txt").exists()
+        assert (dest_dir / "subdir" / "file3.txt").exists()
+        assert (dest_dir / "file1.txt").read_text() == "cloudA"
+
+    def test_mv_cloud_file_with_force(self, cloud_workdir):
+        """Test moving cloud file with force overwrite"""
+        src = cloud_workdir / "cloud_src_force.txt"
+        src.write_text("new content")
+
+        dest = cloud_workdir / "cloud_dest_force.txt"
+        dest.write_text("old content")
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dest),
+            force=True,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src.exists()
+        assert dest.exists()
+        assert dest.read_text() == "new content"
+
+    def test_mv_cloud_file_no_clobber(self, cloud_workdir):
+        """Test moving cloud file with no-clobber (don't overwrite)"""
+        src = cloud_workdir / "cloud_src_nc.txt"
+        src.write_text("new content")
+
+        dest = cloud_workdir / "cloud_dest_nc.txt"
+        dest.write_text("old content")
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src)],
+            DEST=str(dest),
+            force=False,
+            interactive=False,
+            no_clobber=True,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert src.exists(), "Source should still exist when no_clobber prevents move"
+        assert dest.exists()
+        assert (
+            dest.read_text() == "old content"
+        ), "Destination should not be overwritten"
+
+    def test_mv_cloud_multiple_files_to_cloud_dir(self, cloud_workdir):
+        """Test moving multiple cloud files to cloud directory"""
+        src1 = cloud_workdir / "cloud_multi1.txt"
+        src1.write_text("content1")
+
+        src2 = cloud_workdir / "cloud_multi2.txt"
+        src2.write_text("content2")
+
+        dest_dir = cloud_workdir / "cloud_multi_dest"
+        dest_dir.mkdir()
+
+        args = Namespace(
+            u=False,
+            SOURCE=[str(src1), str(src2)],
+            DEST=str(dest_dir),
+            force=False,
+            interactive=False,
+            no_clobber=False,
+            target_directory=None,
+            no_target_directory=False,
+            verbose=True,
+            update=False,
+        )
+        run(args)
+        assert not src1.exists()
+        assert not src2.exists()
+        assert (dest_dir / "cloud_multi1.txt").exists()
+        assert (dest_dir / "cloud_multi2.txt").exists()
+        assert (dest_dir / "cloud_multi1.txt").read_text() == "content1"
+        assert (dest_dir / "cloud_multi2.txt").read_text() == "content2"
