@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import pytest
+import uuid
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ def cloud_workdir(request):
     # also add uuid to avoid collisions in parallel test runs
     cloud_workdir = parent_workdir.joinpath(
         f"{request.node.name}_"
-        f"{request.node.callspec.id if hasattr(request.node, 'callspec') else 'single'}"
+        f"{uuid.uuid4().hex}"
     )
     cloud_workdir.mkdir(parents=True, exist_ok=True)
     yield cloud_workdir
