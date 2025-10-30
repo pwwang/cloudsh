@@ -46,9 +46,12 @@ def _cloud_to_cloud_move(src: CloudPath, dst: CloudPath) -> None:
         src_bucket = src_client.bucket(src_bucket_name)
         src_blob = src_bucket.blob(src_blob_name)
 
-        # Same bucket: use atomic move_blob
+        # Use copy + delete (GCS doesn't have a true atomic move across paths)
+        # For same-bucket operations, this is still efficient as it's server-side
         if src_bucket_name == dst_bucket_name:
-            src_bucket.move_blob(src_blob, new_name=dst_blob_name)
+            # Same bucket: copy within bucket then delete
+            src_bucket.copy_blob(src_blob, src_bucket, new_name=dst_blob_name)
+            src_blob.delete()
         else:
             # Cross-bucket: copy then delete
             dst_bucket = src_client.bucket(dst_bucket_name)
