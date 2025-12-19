@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import sys
+import asyncio
 from typing import TYPE_CHECKING, BinaryIO, Iterator
 
-from yunpath import AnyPath
+from panpath import PanPath
 
 if TYPE_CHECKING:
     from argx import Namespace
 
 
-def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
+async def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
     """Process a file according to cat options.
 
     Args:
@@ -25,7 +26,7 @@ def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
     last_empty = False
 
     while True:
-        line = fh.readline()
+        line = await fh.readline()
         if not line:
             break
 
@@ -68,7 +69,7 @@ def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
         yield line
 
 
-def run(args: Namespace) -> None:
+async def _run(args: Namespace) -> None:
     """Execute the cat command.
 
     Args:
@@ -99,13 +100,13 @@ def run(args: Namespace) -> None:
             try:
                 if file == "-":
                     # Process stdin
-                    for chunk in _process_file(sys.stdin.buffer, args):
+                    async for chunk in _process_file(sys.stdin.buffer, args):
                         sys.stdout.buffer.write(chunk)
                 else:
                     # Process local or cloud file
-                    path = AnyPath(file)
-                    with path.open("rb") as fh:
-                        for chunk in _process_file(fh, args):
+                    path = PanPath(file)
+                    async with path.a_open("rb") as fh:
+                        async for chunk in _process_file(fh, args):
                             sys.stdout.buffer.write(chunk)
                 sys.stdout.buffer.flush()
             except BrokenPipeError:
@@ -117,3 +118,12 @@ def run(args: Namespace) -> None:
 
     except KeyboardInterrupt:
         sys.exit(130)  # Standard Unix practice
+
+
+def run(args: Namespace) -> None:
+    """Entry point for cat command.
+
+    Args:
+        args: Parsed command line arguments
+    """
+    asyncio.run(_run(args))
