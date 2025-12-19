@@ -4,15 +4,164 @@ from __future__ import annotations
 
 import sys
 import asyncio
-from typing import TYPE_CHECKING, BinaryIO, Iterator
+from typing import TYPE_CHECKING, Iterator
 
-from panpath import PanPath
+from panpath import PanPath, LocalPath
+from panpath.clients import AsyncFileHandle
 
 if TYPE_CHECKING:
     from argx import Namespace
 
 
-async def _process_file(fh: BinaryIO, args) -> Iterator[bytes]:
+async def _process_stdin(args) -> None:
+    """Process stdin line by line, echoing each line immediately like GNU cat.
+
+    Args:
+        args: Command line arguments
+    """
+    cmd = ["cat"]
+    if args.number:
+        cmd.append("-n")
+    if args.number_nonblank:
+        cmd.append("-b")
+    if args.squeeze_blank:
+        cmd.append("-s")
+    if args.show_ends or args.show_all or args.e:
+        cmd.append("-E")
+    if args.show_tabs or args.show_all or args.t:
+        cmd.append("-T")
+    if args.show_nonprinting or args.show_all or args.t or args.e:
+        cmd.append("-v")
+
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    # Check if stdin has fileno() method (real stdin vs mock for testing)
+    has_real_stdin = hasattr(sys.stdin, "fileno") and callable(
+        getattr(sys.stdin, "fileno", None)
+    )
+
+    async def read_stdin_and_forward():
+        """Read from stdin asynchronously and forward to process."""
+        try:
+            if has_real_stdin:
+                # Use async reading for real stdin (interactive mode)
+                loop = asyncio.get_event_loop()
+                reader = asyncio.StreamReader()
+                protocol = asyncio.StreamReaderProtocol(reader)
+                await loop.connect_read_pipe(lambda: protocol, sys.stdin)
+
+                while True:
+                    line = await reader.readline()
+                    if not line:
+                        break
+                    process.stdin.write(line)
+                    await process.stdin.drain()
+            else:
+                # Fallback for mock stdin (testing mode)
+                for line in sys.stdin.buffer:
+                    process.stdin.write(line)
+                    await process.stdin.drain()
+        except Exception:
+            pass
+        finally:
+            if not process.stdin.is_closing():
+                process.stdin.close()
+
+    async def read_and_forward(stream, output):
+        """Read from stream and forward to output immediately."""
+        try:
+            while True:
+                line = await stream.readline()
+                if not line:
+                    break
+                output.buffer.write(line)
+                output.buffer.flush()
+        except Exception:
+            pass
+
+    try:
+        # Start all tasks
+        stdin_task = asyncio.create_task(read_stdin_and_forward())
+        stdout_task = asyncio.create_task(
+            read_and_forward(process.stdout, sys.stdout)
+        )
+        stderr_task = asyncio.create_task(
+            read_and_forward(process.stderr, sys.stderr)
+        )
+
+        # Wait for all tasks
+        await asyncio.gather(stdin_task, stdout_task, stderr_task)
+        await process.wait()
+
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        # Cancel all tasks
+        stdin_task.cancel()
+        stdout_task.cancel()
+        stderr_task.cancel()
+        process.kill()
+        try:
+            await asyncio.gather(
+                stdin_task, stdout_task, stderr_task, return_exceptions=True
+            )
+        except Exception:
+            pass
+
+        await process.wait()
+
+
+async def _process_local_file(
+    filename: str,
+    args,
+) -> None:
+    """Process a local file using the system's cat command.
+
+    Args:
+        filename: The name of the local file to process
+        args: Command line arguments
+    """
+    cmd = ["cat"]
+    if args.number:
+        cmd.append("-n")
+    if args.number_nonblank:
+        cmd.append("-b")
+    if args.squeeze_blank:
+        cmd.append("-s")
+    if args.show_ends or args.show_all or args.e:
+        cmd.append("-E")
+    if args.show_tabs or args.show_all or args.t:
+        cmd.append("-T")
+    if args.show_nonprinting or args.show_all or args.t or args.e:
+        cmd.append("-v")
+
+    cmd.append(filename)
+
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    try:
+        stdout, stderr = await process.communicate()
+    except asyncio.CancelledError:
+        process.kill()
+        await process.wait()
+    else:
+        if stdout:
+            sys.stdout.buffer.write(stdout)
+        if stderr:
+            sys.stderr.buffer.write(stderr)
+
+
+async def _process_cloud_file(
+    fh: AsyncFileHandle,
+    args,
+) -> Iterator[bytes]:
     """Process a file according to cat options.
 
     Args:
@@ -99,16 +248,26 @@ async def _run(args: Namespace) -> None:
         for file in files:
             try:
                 if file == "-":
-                    # Process stdin
-                    async for chunk in _process_file(sys.stdin.buffer, args):
-                        sys.stdout.buffer.write(chunk)
+                    await _process_stdin(args)
                 else:
-                    # Process local or cloud file
                     path = PanPath(file)
-                    async with path.a_open("rb") as fh:
-                        async for chunk in _process_file(fh, args):
-                            sys.stdout.buffer.write(chunk)
-                sys.stdout.buffer.flush()
+                    if await path.a_exists() is False:
+                        print(
+                            f"cloudsh cat: {file}: No such file or directory",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+
+                    if isinstance(path, LocalPath):
+                        # Use cat command for local files or stdin
+                        await _process_local_file(file, args)
+                    else:
+                        # Process local or cloud file
+                        path = PanPath(file)
+                        async with path.a_open("rb") as fh:
+                            async for chunk in _process_cloud_file(fh, args):
+                                sys.stdout.buffer.write(chunk)
+                    sys.stdout.buffer.flush()
             except BrokenPipeError:
                 sys.stderr.close()  # Prevent additional errors
                 sys.exit(141)  # Standard Unix practice
