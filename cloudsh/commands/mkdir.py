@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from typing import TYPE_CHECKING
-from yunpath import AnyPath, CloudPath
+from panpath import PanPath, CloudPath
 
 from ..utils import PACKAGE
 
@@ -22,7 +22,7 @@ def _parse_mode(mode_str: str | None) -> int:
         sys.exit(1)
 
 
-def run(args: Namespace) -> None:
+async def _run(args: Namespace) -> None:
     """Create directories
 
     Args:
@@ -33,12 +33,14 @@ def run(args: Namespace) -> None:
         sys.exit(1)
 
     for directory in args.directory:
-        path = AnyPath(directory)
+        path = PanPath(directory)
         try:
             if isinstance(path, CloudPath):
-                path.mkdir(parents=args.parents, exist_ok=args.parents)
+                await path.a_mkdir(parents=args.parents, exist_ok=args.parents)
             else:
-                path.mkdir(mode=mode, parents=args.parents, exist_ok=args.parents)
+                await path.a_mkdir(
+                    mode=mode, parents=args.parents, exist_ok=args.parents
+                )
 
             if args.verbose:
                 print(f"created directory '{directory}'")
@@ -65,3 +67,10 @@ def run(args: Namespace) -> None:
                     file=sys.stderr,
                 )
             sys.exit(1)
+
+
+def run(args: Namespace) -> None:
+    """Execute the mkdir command with given arguments."""
+    import asyncio
+
+    asyncio.run(_run(args))
