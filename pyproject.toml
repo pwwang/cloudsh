@@ -7,7 +7,7 @@ packages = [{ include = "cloudsh" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-yunpath = "^0.1"
+panpath = "^0.2"
 argx = "^0.3"
 python-simpleconf = {version = "^0.7", extras = ["toml"]}
 azure-storage-blob = { version = "^12", optional = true }
@@ -30,6 +30,10 @@ all = ["azure-storage-blob", "azure-storage-file-datalake", "boto3", "google-clo
 [tool.poetry.group.dev.dependencies]
 pytest = "^8"
 pytest-cov = "^6"
+pytest-asyncio = [
+    {version = "<1.3", python = "<3.10"},
+    {version = "^1.3", python = ">=3.10"}
+]
 python-dotenv = "^1.0"
 google-cloud-storage = "^3.0"
 

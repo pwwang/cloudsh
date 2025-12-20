@@ -31,6 +31,9 @@ async def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
         sys.exit(1)
 
     if not await apath.a_is_dir():
+        print(apath)
+        print(repr(apath))
+        print(f"{PACKAGE} complete: path is not a directory: {path}", file=sys.stderr)
         yield path
 
     if depth == 0:
@@ -38,7 +41,7 @@ async def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
         return
 
     dep = 0
-    async for p in apath.a_iterdir():
+    for p in await apath.a_iterdir():
         if await p.a_is_dir():
             yield str(p).rstrip("/") + "/"
             if depth == -1 or dep < depth:
@@ -52,7 +55,7 @@ async def _read_cache() -> Generator[str, None, None]:
     """Read cached paths for a bucket."""
     if await COMPLETE_CACHE.a_exists():
         async with COMPLETE_CACHE.a_open() as f:
-            for path in f:
+            async for path in f:
                 yield path.strip()
 
 
@@ -150,7 +153,9 @@ async def _run(args: Namespace) -> None:
 
     if args.update_cache:
         for path in args.path:
-            paths = await _scan_path(path, depth=args.depth)
+            paths = []
+            async for p in _scan_path(path, depth=args.depth):
+                paths.append(p)
             await _update_cache(path, paths)
         print(f"{PACKAGE} complete: cache updated: {COMPLETE_CACHE}")
         return
