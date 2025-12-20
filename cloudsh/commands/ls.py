@@ -238,6 +238,8 @@ async def _run(args: Namespace) -> None:
                 time_sort=args.t,
                 one_per_line=args.one,
             )
+            if args.recursive and await path.a_is_dir():
+                print(f"{path}:")
 
             if args.one:
                 for entry in entries:
@@ -250,8 +252,9 @@ async def _run(args: Namespace) -> None:
                     if await entry.a_is_dir() and not entry.name.startswith("."):
                         print()
                         # Get just the parent and current directory names
-                        dirname = "/".join(str(entry).rstrip("/").split("/")[-2:])
-                        print(f"{dirname}:")
+                        # dirname = "/".join(str(entry).rstrip("/").split("/")[-2:])
+                        # print(f"{dirname}:")
+                        # print(f"{entry}:")
                         recurse_args = Namespace(**vars(args))
                         recurse_args.file = [str(entry)]
                         await _run(recurse_args)
