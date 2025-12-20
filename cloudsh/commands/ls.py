@@ -12,11 +12,9 @@ import time
 import pwd
 import grp
 from datetime import datetime
-from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Optional
 from argparse import Namespace
-from yunpath import AnyPath, CloudPath
-from cloudpathlib.exceptions import NoStatError
+from panpath import PanPath, CloudPath
 
 from ..utils import PACKAGE
 
@@ -83,40 +81,41 @@ def _format_mode(mode: Optional[int]) -> str:
     return perms
 
 
-def _format_time(mtime: float) -> str:
+def _format_time(mtime: datetime) -> str:
     """Format modification time."""
     now = time.time()
-    datetime_obj = datetime.fromtimestamp(mtime)
 
-    if now - mtime > 60 * 60 * 24 * 180:  # Older than 6 months
-        return datetime_obj.strftime("%b %d  %Y")
-    return datetime_obj.strftime("%b %d %H:%M")
+    if now - mtime.timestamp() > 60 * 60 * 24 * 180:  # Older than 6 months
+        return mtime.strftime("%b %d  %Y")
+    return mtime.strftime("%b %d %H:%M")
 
 
-def _format_entry_long(
-    path: Union[CloudPath, Path], human_readable: bool, si: bool
+async def _format_entry_long(
+    path: PanPath, human_readable: bool, si: bool
 ) -> str:
     """Format a single entry in long listing format."""
     try:
-        st = path.stat()
+        st = await path.a_stat()
+
         # Default values for all fields
         mode_str = "-" * 10
         nlink = 1
         user = "<unknown>"
         group = "<unknown>"
         size = 0
-        mtime = time.time()
+        fallback_mtime = datetime.fromtimestamp(0)
 
         # Try to get actual values
-        try:
-            size = st.st_size
-            mtime = getattr(st, "st_mtime", time.time())
-        except AttributeError:
-            pass
+        size = st.st_size
+        mtime = getattr(st, "st_mtime", None)
+        if mtime is not None and isinstance(mtime, (int, float)):
+            mtime = datetime.fromtimestamp(mtime)
+        else:
+            mtime = fallback_mtime
 
         # Handle permissions and ownership
         if isinstance(path, CloudPath):
-            if path.is_dir():
+            if await path.a_is_dir():
                 mode_str = "d" + "-" * 9
         else:
             try:
@@ -136,16 +135,16 @@ def _format_entry_long(
         return (
             f"{mode_str} {nlink:3d} {user:8} {group:8} "
             f"{size_str:>8} {time_str} "
-            f"{path.name + '/' if path.is_dir() else path.name}"
+            f"{path.name + '/' if await path.a_is_dir() else path.name}"
         )
 
-    except (OSError, NoStatError) as e:
+    except OSError as e:
         print(f"{PACKAGE} ls: cannot access '{path}': {str(e)}", file=sys.stderr)
         return ""
 
 
-def _list_entries(
-    path: Union[CloudPath, Path],
+async def _list_entries(
+    path: PanPath,
     all: bool = False,
     almost_all: bool = False,
     long: bool = False,
@@ -158,22 +157,22 @@ def _list_entries(
 ) -> List[str]:
     """List directory entries with specified options."""
     try:
-        if not path.exists():
+        if not await path.a_exists():
             print(
                 f"{PACKAGE} ls: cannot access '{path}': No such file or directory",
                 file=sys.stderr,
             )
             sys.exit(1)
 
-        if path.is_file():
+        if await path.a_is_file():
             if long:
-                return [_format_entry_long(path, human_readable, si)]
+                return [await _format_entry_long(path, human_readable, si)]
             return [path.name]
 
         entries = []
         # Store entry objects for sorting
         entry_objects = []
-        for entry in path.iterdir():
+        for entry in await path.a_iterdir():
             name = entry.name
             if not all and not almost_all and name.startswith("."):
                 continue
@@ -198,24 +197,26 @@ def _list_entries(
         # Format entries after sorting
         for entry in entry_objects:
             if long:
-                formatted = _format_entry_long(entry, human_readable, si)
+                formatted = await _format_entry_long(entry, human_readable, si)
                 if formatted:
                     entries.append(formatted)
             else:
-                entries.append(entry.name + "/" if entry.is_dir() else entry.name)
+                entries.append(
+                    entry.name + "/" if await entry.a_is_dir() else entry.name
+                )
 
         return entries
 
-    except (OSError, NoStatError) as e:
+    except OSError as e:
         print(f"{PACKAGE} ls: cannot access '{path}': {str(e)}", file=sys.stderr)
         sys.exit(1)
         return []
 
 
-def run(args: Namespace) -> None:
+async def _run(args: Namespace) -> None:
     """Execute the ls command with given arguments."""
     # Default to current directory if no files specified
-    paths = [AnyPath(".")] if not args.file else [AnyPath(f) for f in args.file]
+    paths = [PanPath(".")] if not args.file else [PanPath(f) for f in args.file]
 
     for i, path in enumerate(paths):
         if len(paths) > 1:
@@ -224,7 +225,8 @@ def run(args: Namespace) -> None:
             print(f"{path}:")
 
         try:
-            entries = _list_entries(
+            path = PanPath(path)
+            entries = await _list_entries(
                 path,
                 all=args.all,
                 almost_all=args.almost_all,
@@ -243,17 +245,24 @@ def run(args: Namespace) -> None:
             else:
                 print("\n".join(entries))
 
-            if args.recursive and path.is_dir():
-                for entry in path.iterdir():
-                    if entry.is_dir() and not entry.name.startswith("."):
+            if args.recursive and await path.a_is_dir():
+                for entry in await path.a_iterdir():
+                    if await entry.a_is_dir() and not entry.name.startswith("."):
                         print()
                         # Get just the parent and current directory names
                         dirname = "/".join(str(entry).rstrip("/").split("/")[-2:])
                         print(f"{dirname}:")
                         recurse_args = Namespace(**vars(args))
                         recurse_args.file = [str(entry)]
-                        run(recurse_args)
+                        await _run(recurse_args)
 
-        except (OSError, NoStatError) as e:
+        except OSError as e:
             print(f"{PACKAGE} ls: cannot access '{path}': {str(e)}", file=sys.stderr)
             sys.exit(1)
+
+
+def run(args: Namespace) -> None:
+    """Synchronous wrapper to run the ls command."""
+    import asyncio
+
+    asyncio.run(_run(args))
