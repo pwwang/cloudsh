@@ -10,12 +10,13 @@ import sys
 import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
-from yunpath import AnyPath
+from panpath import PanPath, LocalPath
+from panpath.clients import AsyncFileHandle
 
 from ..utils import PACKAGE, parse_number
 
 if TYPE_CHECKING:  # pragma: no cover
-    from typing import BinaryIO, Optional
+    from typing import Optional
     from argparse import Namespace
 
 
@@ -85,8 +86,8 @@ def _head_local_file(args: Namespace, file: Path) -> None:
         sys.exit(proc.returncode)
 
 
-def _head_cloud_file(
-    fh: BinaryIO,
+async def _head_cloud_file(
+    fh: AsyncFileHandle,
     args: Namespace,
     filename: Optional[str] = None,
 ) -> None:
@@ -106,18 +107,18 @@ def _head_cloud_file(
 
     if args.bytes is not None:
         if args.bytes >= 0:
-            content = fh.read(args.bytes)
+            content = await fh.read(args.bytes)
         else:
             # For negative bytes, follow GNU head behavior:
             # Print all but the last N bytes (where N = abs(args.bytes))
             # 1. Get file size by seeking to end
             # 2. Calculate how many bytes to read from start: size + args.bytes
             # 3. Seek back to start and read that many bytes
-            fh.seek(0, 2)  # Seek to end to get size
-            size = fh.tell()
+            await fh.seek(0, 2)  # Seek to end to get size
+            size = await fh.tell()
             bytes_to_read = max(0, size + args.bytes)  # size + negative = size - abs
-            fh.seek(0, 0)  # Seek back to start
-            content = fh.read(bytes_to_read)
+            await fh.seek(0, 0)  # Seek back to start
+            content = await fh.read(bytes_to_read)
         sys.stdout.buffer.write(content)
         return
 
@@ -125,19 +126,24 @@ def _head_cloud_file(
     lines = []
     num_lines = args.lines if args.lines is not None else 10
     abs_num = abs(num_lines)
-
     if num_lines >= 0:
         remaining = b""  # Keep track of partial lines
         while len(lines) < abs_num:
-            chunk = fh.read(8192)  # Read in chunks
+            chunk = await fh.read(8192)  # Read in chunks
             if not chunk:
                 # Handle any remaining partial line
                 if remaining:  # pragma: no cover
                     lines.append(remaining)
+                    remaining = b""
                 break
 
             data = remaining + chunk
             parts = data.split(delim)
+
+            if len(parts) == 1:
+                # No delimiter found, keep accumulating
+                remaining = parts[0]
+                continue
 
             # Keep the last part as it might be incomplete
             remaining = parts[-1]
@@ -162,7 +168,7 @@ def _head_cloud_file(
     else:
         # For negative line count:
         # Read all lines first
-        content = fh.read()
+        content = await fh.read()
         # Split into lines, keeping empty ones
         parts = content.split(delim)
         # Remove last empty line if present
@@ -176,7 +182,7 @@ def _head_cloud_file(
     sys.stdout.buffer.writelines(lines)
 
 
-def run(args: Namespace) -> None:
+async def _run(args: Namespace) -> None:
     """Execute the head command on given files.
 
     Args:
@@ -188,13 +194,20 @@ def run(args: Namespace) -> None:
 
     for file in args.file:
         try:
-            path = AnyPath(file)
-            if file == "-" or isinstance(path, Path):
+            path = PanPath(file)
+            if file == "-" or isinstance(path, LocalPath):
                 _head_local_file(args, path)
             else:
                 # Cloud file - use our implementation
-                with path.open("rb") as fh:
-                    _head_cloud_file(fh, args, str(path))
+                async with path.a_open("rb") as fh:
+                    await _head_cloud_file(fh, args, str(path))
         except (OSError, IOError) as e:
             print(f"{PACKAGE}: {file}: {str(e)}", file=sys.stderr)
             sys.exit(1)
+
+
+def run(args: Namespace) -> None:
+    """Wrapper to run async head command."""
+    import asyncio
+
+    asyncio.run(_run(args))
