@@ -3,7 +3,7 @@ from io import BytesIO
 
 import pytest
 
-from cloudsh.commands.cat import run
+from cloudsh.commands.cat import _run
 
 
 class MockStdin:
@@ -39,7 +39,8 @@ class TestCat:
         path.write_text("line1\n\n\n\nline2\n\n\nline3\n")
         return str(path)
 
-    def test_cat_basic(self, basic_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_basic(self, basic_file, capsys):
         """Test basic cat functionality"""
         args = Namespace(
             file=[basic_file],
@@ -53,11 +54,12 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert captured.out == "line1\nline2\nline3\n"
 
-    def test_cat_multiple_files(self, basic_file, empty_lines_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_multiple_files(self, basic_file, empty_lines_file, capsys):
         """Test concatenating multiple files"""
         args = Namespace(
             file=[basic_file, empty_lines_file],
@@ -71,12 +73,13 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "line1\nline2\nline3\n" in captured.out
         assert "line1\n\n\n\nline2\n\n\nline3\n" in captured.out
 
-    def test_cat_number_all_lines(self, basic_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_number_all_lines(self, basic_file, capsys):
         """Test -n option (number all lines)"""
         args = Namespace(
             file=[basic_file],
@@ -90,13 +93,14 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "     1\tline1\n" in captured.out
         assert "     2\tline2\n" in captured.out
         assert "     3\tline3\n" in captured.out
 
-    def test_cat_number_nonblank(self, empty_lines_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_number_nonblank(self, empty_lines_file, capsys):
         """Test -b option (number non-blank lines)"""
         args = Namespace(
             file=[empty_lines_file],
@@ -110,13 +114,14 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         lines = captured.out.splitlines(True)
         numbered_lines = [line for line in lines if line.startswith("     ")]
         assert len(numbered_lines) == 3  # Only non-empty lines numbered
 
-    def test_cat_squeeze_blank(self, empty_lines_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_squeeze_blank(self, empty_lines_file, capsys):
         """Test -s option (squeeze multiple blank lines)"""
         args = Namespace(
             file=[empty_lines_file],
@@ -130,11 +135,12 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert captured.out.count("\n\n\n") == 0  # No more than 2 consecutive newlines
 
-    def test_cat_show_ends(self, basic_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_show_ends(self, basic_file, capsys):
         """Test -E option (show line endings)"""
         args = Namespace(
             file=[basic_file],
@@ -148,13 +154,14 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "line1$\n" in captured.out
         assert "line2$\n" in captured.out
         assert "line3$\n" in captured.out
 
-    def test_cat_show_tabs(self, special_chars_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_show_tabs(self, special_chars_file, capsys):
         """Test -T option (show tabs)"""
         args = Namespace(
             file=[special_chars_file],
@@ -168,11 +175,12 @@ class TestCat:
             show_tabs=True,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "^I" in captured.out  # Tab shown as ^I
 
-    def test_cat_show_nonprinting(self, special_chars_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_show_nonprinting(self, special_chars_file, capsys):
         """Test -v option (show non-printing characters)"""
         args = Namespace(
             file=[special_chars_file],
@@ -186,14 +194,15 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=True,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "^A" in captured.out  # Control char 0x01
         assert "^B" in captured.out  # Control char 0x02
         assert "^?" in captured.out  # DEL char 0x7F
         assert "M-" in captured.out  # Extended ASCII char 0x80
 
-    def test_cat_show_all(self, special_chars_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_show_all(self, special_chars_file, capsys):
         """Test -A option (equivalent to -vET)"""
         args = Namespace(
             file=[special_chars_file],
@@ -207,13 +216,14 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "^I" in captured.out  # Tabs
         assert "^A" in captured.out  # Control chars
         assert "$" in captured.out  # Line endings
 
-    def test_cat_stdin(self, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_cat_stdin(self, capsys, monkeypatch):
         """Test reading from stdin"""
         mock_stdin = MockStdin(b"from stdin\n")
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -229,11 +239,12 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "from stdin" in captured.out
 
-    def test_cat_nonexistent_file(self, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_nonexistent_file(self, capsys):
         """Test error handling for nonexistent file"""
         args = Namespace(
             file=["nonexistent.txt"],
@@ -248,12 +259,13 @@ class TestCat:
             show_nonprinting=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 1
         captured = capsys.readouterr()
         assert "No such file" in captured.err
 
-    def test_cat_broken_pipe(self, basic_file, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_cat_broken_pipe(self, basic_file, monkeypatch):
         """Test handling of broken pipe"""
 
         def raise_broken_pipe(*args, **kwargs):
@@ -275,10 +287,11 @@ class TestCat:
             show_nonprinting=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 141
 
-    def test_cat_keyboard_interrupt(self, basic_file, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_cat_keyboard_interrupt(self, basic_file, monkeypatch):
         """Test handling of keyboard interrupt"""
 
         def raise_keyboard_interrupt(*args, **kwargs):
@@ -298,10 +311,11 @@ class TestCat:
             show_nonprinting=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 130
 
-    def test_cat_e_option(self, special_chars_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_e_option(self, special_chars_file, capsys):
         """Test -e option (show non-printing and ends)"""
         args = Namespace(
             file=[special_chars_file],
@@ -315,13 +329,14 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # -e should enable both show_nonprinting and show_ends
         assert "$" in captured.out  # Line endings
         assert "^" in captured.out  # Non-printing chars
 
-    def test_cat_t_option(self, special_chars_file, capsys):
+    @pytest.mark.asyncio
+    async def test_cat_t_option(self, special_chars_file, capsys):
         """Test -t option (show non-printing and tabs)"""
         args = Namespace(
             file=[special_chars_file],
@@ -335,7 +350,7 @@ class TestCat:
             show_tabs=False,
             show_nonprinting=False,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # -t should enable both show_nonprinting and show_tabs
         assert "^I" in captured.out  # Tabs shown as ^I
