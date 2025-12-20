@@ -12,9 +12,10 @@ import re
 import sys
 import tty
 import termios
-from typing import TYPE_CHECKING, BinaryIO, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from yunpath import AnyPath
+from panpath import PanPath
+from panpath.clients import AsyncFileHandle
 
 from ..utils import PACKAGE
 
@@ -31,12 +32,13 @@ def _get_terminal_size() -> tuple[int, int]:
     try:
         # Try using shutil first (Python 3.3+)
         import shutil
+
         size = shutil.get_terminal_size(fallback=(80, 24))
         return size.lines, size.columns
     except Exception:
         try:
             # Fallback to stty
-            rows, cols = os.popen('stty size', 'r').read().split()
+            rows, cols = os.popen("stty size", "r").read().split()
             return int(rows), int(cols)
         except Exception:
             # Final fallback to default terminal size
@@ -53,7 +55,7 @@ def _get_char() -> str:
     if not sys.stdin.isatty():
         # Not a TTY, just read one character
         ch = sys.stdin.read(1)
-        return ch if ch else 'q'  # Return 'q' on EOF to quit
+        return ch if ch else "q"  # Return 'q' on EOF to quit
 
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -85,37 +87,37 @@ def _get_input(prompt: str) -> str:
         result = []
         while True:
             ch = sys.stdin.read(1)
-            if ch == '\n' or ch == '\r':
+            if ch == "\n" or ch == "\r":
                 break
-            elif ch == '\x7f' or ch == '\b':  # Backspace
+            elif ch == "\x7f" or ch == "\b":  # Backspace
                 if result:
                     result.pop()
-                    sys.stdout.write('\b \b')
+                    sys.stdout.write("\b \b")
                     sys.stdout.flush()
             else:
                 result.append(ch)
                 sys.stdout.write(ch)
                 sys.stdout.flush()
-        return ''.join(result)
+        return "".join(result)
     finally:
         pass
 
 
 def _clear_screen() -> None:
     """Clear the terminal screen."""
-    sys.stdout.write('\033[2J\033[H')
+    sys.stdout.write("\033[2J\033[H")
     sys.stdout.flush()
 
 
 def _enter_alternate_screen() -> None:
     """Enter the alternate screen buffer."""
-    sys.stdout.write('\033[?1049h')
+    sys.stdout.write("\033[?1049h")
     sys.stdout.flush()
 
 
 def _exit_alternate_screen() -> None:
     """Exit the alternate screen buffer."""
-    sys.stdout.write('\033[?1049l')
+    sys.stdout.write("\033[?1049l")
     sys.stdout.flush()
 
 
@@ -155,8 +157,8 @@ def _display_lines(
 
         try:
             sys.stdout.buffer.write(line)
-            if not line.endswith(b'\n'):
-                sys.stdout.write('\n')
+            if not line.endswith(b"\n"):
+                sys.stdout.write("\n")
         except BrokenPipeError:
             sys.exit(141)
 
@@ -191,13 +193,13 @@ def _show_status(
         status = f"{filename} ({percent}%)"
 
     # Use reverse video for status line
-    sys.stdout.write(f'\033[7m{status}\033[0m')
+    sys.stdout.write(f"\033[7m{status}\033[0m")
     sys.stdout.flush()
 
 
 def _clear_status() -> None:
     """Clear the status line."""
-    sys.stdout.write('\r\033[K')
+    sys.stdout.write("\r\033[K")
     sys.stdout.flush()
 
 
@@ -259,7 +261,7 @@ def _search_backward(
     return None
 
 
-def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
+async def _process_file(fh: AsyncFileHandle, filename: str, args: Namespace) -> None:
     """Process a file and display it with less-like navigation.
 
     Args:
@@ -268,20 +270,20 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
         args: Command line arguments
     """
     # Read all lines from the file
-    content = fh.read()
+    content = await fh.read()
     if not content:
         return
 
     # Split by newline
-    parts = content.split(b'\n')
+    parts = content.split(b"\n")
 
     # Reconstruct lines with newlines
     lines = []
     for i, part in enumerate(parts[:-1]):
-        lines.append(part + b'\n')
+        lines.append(part + b"\n")
 
     # Handle the last part
-    if content.endswith(b'\n'):
+    if content.endswith(b"\n"):
         # Last part is empty, don't add it
         pass
     else:
@@ -293,7 +295,7 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
         squeezed_lines = []
         prev_empty = False
         for line in lines:
-            is_empty = line.strip() == b''
+            is_empty = line.strip() == b""
             if is_empty and prev_empty:
                 continue
             squeezed_lines.append(line)
@@ -353,24 +355,24 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
             _clear_status()
 
             # Handle commands
-            if ch == 'q' or ch == 'Q':
+            if ch == "q" or ch == "Q":
                 # Quit
                 break
-            elif ch == 'Z':
+            elif ch == "Z":
                 # Check for ZZ (quit)
                 ch2 = _get_char()
-                if ch2 == 'Z':
+                if ch2 == "Z":
                     break
                 # If not ZZ, ignore both characters
                 eof_count = 0
-            elif ch == ':':
+            elif ch == ":":
                 # Check for :q (quit)
-                command = _get_input(':')
-                if command in ('q', 'Q', 'quit'):
+                command = _get_input(":")
+                if command in ("q", "Q", "quit"):
                     break
                 # If not a quit command, ignore
                 eof_count = 0
-            elif ch == ' ' or ch == 'f' or ch == '\x06':  # Space, f, or Ctrl+F
+            elif ch == " " or ch == "f" or ch == "\x06":  # Space, f, or Ctrl+F
                 # Forward one screen
                 current_line += screen_lines - 1
                 if current_line >= total_lines - 1:
@@ -378,42 +380,43 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                     eof_count += 1
                     if args.QUIT_AT_EOF and eof_count >= 2:
                         break
-            elif ch == 'b' or ch == '\x02':  # b or Ctrl+B
+            elif ch == "b" or ch == "\x02":  # b or Ctrl+B
                 # Backward one screen
                 current_line -= screen_lines - 1
                 current_line = max(0, current_line)
                 eof_count = 0
-            elif (ch == '\r' or ch == '\n' or ch == 'j'
-                  or ch == '\x0e'):  # Enter, j, or Ctrl+N
+            elif (
+                ch == "\r" or ch == "\n" or ch == "j" or ch == "\x0e"
+            ):  # Enter, j, or Ctrl+N
                 # Forward one line
                 if current_line < total_lines - 1:
                     current_line += 1
                 eof_count = 0
-            elif ch == 'k' or ch == '\x10' or ch == 'y':  # k, Ctrl+P, or y
+            elif ch == "k" or ch == "\x10" or ch == "y":  # k, Ctrl+P, or y
                 # Backward one line
                 if current_line > 0:
                     current_line -= 1
                 eof_count = 0
-            elif ch == 'd' or ch == '\x04':  # d or Ctrl+D
+            elif ch == "d" or ch == "\x04":  # d or Ctrl+D
                 # Forward half screen
                 current_line += screen_lines // 2
                 eof_count = 0
-            elif ch == 'u' or ch == '\x15':  # u or Ctrl+U
+            elif ch == "u" or ch == "\x15":  # u or Ctrl+U
                 # Backward half screen
                 current_line -= screen_lines // 2
                 current_line = max(0, current_line)
                 eof_count = 0
-            elif ch == 'g' or ch == '<':
+            elif ch == "g" or ch == "<":
                 # Go to beginning
                 current_line = 0
                 eof_count = 0
-            elif ch == 'G' or ch == '>':
+            elif ch == "G" or ch == ">":
                 # Go to end
                 current_line = max(0, total_lines - screen_lines)
                 eof_count = 0
-            elif ch == '/':
+            elif ch == "/":
                 # Search forward
-                pattern = _get_input('/')
+                pattern = _get_input("/")
                 if pattern:
                     search_pattern = pattern
                     found = _search_forward(
@@ -426,14 +429,13 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                         current_line = found
                     else:
                         _show_status(
-                            filename, current_line, total_lines,
-                            "Pattern not found"
+                            filename, current_line, total_lines, "Pattern not found"
                         )
                         _get_char()
                 eof_count = 0
-            elif ch == '?':
+            elif ch == "?":
                 # Search backward
-                pattern = _get_input('?')
+                pattern = _get_input("?")
                 if pattern:
                     search_pattern = pattern
                     found = _search_backward(
@@ -446,12 +448,11 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                         current_line = found
                     else:
                         _show_status(
-                            filename, current_line, total_lines,
-                            "Pattern not found"
+                            filename, current_line, total_lines, "Pattern not found"
                         )
                         _get_char()
                 eof_count = 0
-            elif ch == 'n':
+            elif ch == "n":
                 # Repeat last search forward
                 if search_pattern:
                     found = _search_forward(
@@ -464,12 +465,11 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                         current_line = found
                     else:
                         _show_status(
-                            filename, current_line, total_lines,
-                            "Pattern not found"
+                            filename, current_line, total_lines, "Pattern not found"
                         )
                         _get_char()
                 eof_count = 0
-            elif ch == 'N':
+            elif ch == "N":
                 # Repeat last search backward
                 if search_pattern:
                     found = _search_backward(
@@ -482,12 +482,11 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
                         current_line = found
                     else:
                         _show_status(
-                            filename, current_line, total_lines,
-                            "Pattern not found"
+                            filename, current_line, total_lines, "Pattern not found"
                         )
                         _get_char()
                 eof_count = 0
-            elif ch == 'h' or ch == 'H':
+            elif ch == "h" or ch == "H":
                 # Help
                 help_lines = [
                     b"SUMMARY OF LESS COMMANDS\n",
@@ -527,26 +526,35 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
             _exit_alternate_screen()
 
 
-def run(args: Namespace) -> None:
+async def _run(args: Namespace) -> None:
     """Execute the less command.
 
     Args:
         args: Parsed command line arguments
     """
     # Default to stdin if no files specified
-    files = args.file or ["-"]
+    files = args.file
+    if not files:
+        print(
+            f"{PACKAGE} less: Missing filename (cloudsh less --help for help)",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     try:
         for file in files:
             try:
                 if file == "-":
-                    # Process stdin
-                    _process_file(sys.stdin.buffer, "<stdin>", args)
+                    print(
+                        f"{PACKAGE} less: reading from stdin is not supported",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
                 else:
                     # Process local or cloud file
-                    path = AnyPath(file)
-                    with path.open("rb") as fh:
-                        _process_file(fh, file, args)
+                    path = PanPath(file)
+                    async with path.a_open("rb") as fh:
+                        await _process_file(fh, file, args)
 
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully
@@ -563,3 +571,14 @@ def run(args: Namespace) -> None:
     except BrokenPipeError:
         sys.stderr.close()
         sys.exit(141)
+
+
+def run(args: Namespace) -> None:
+    """Entry point for less command.
+
+    Args:
+        args: Parsed command line arguments
+    """
+    import asyncio
+
+    asyncio.run(_run(args))

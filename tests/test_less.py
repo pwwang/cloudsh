@@ -6,7 +6,7 @@ from io import BytesIO
 import pytest
 
 from cloudsh.commands.less import (
-    run,
+    _run,
     _get_terminal_size,
     _display_lines,
     _search_forward,
@@ -25,7 +25,7 @@ class MockStdin:
         return self._is_tty
 
     def read(self, n):
-        return 'q'  # Always return 'q' to quit
+        return "q"  # Always return 'q' to quit
 
 
 class TestLess:
@@ -76,7 +76,8 @@ class TestLess:
         assert rows > 0
         assert cols > 0
 
-    def test_less_quit_if_one_screen(self, small_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_quit_if_one_screen(self, small_file, capsys, monkeypatch):
         """Test --quit-if-one-screen option"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -94,13 +95,14 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
         assert "Line 2" in captured.out
         assert "Line 3" in captured.out
 
-    def test_less_with_line_numbers(self, small_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_with_line_numbers(self, small_file, capsys, monkeypatch):
         """Test --line-numbers option"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -118,12 +120,15 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should have line numbers
         assert "1" in captured.out or "     1" in captured.out
 
-    def test_less_squeeze_blank_lines(self, empty_lines_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_squeeze_blank_lines(
+        self, empty_lines_file, capsys, monkeypatch
+    ):
         """Test --squeeze-blank-lines option"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -141,14 +146,15 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should not have more than 2 consecutive newlines
         assert "\n\n\n" not in captured.out
         assert "line1" in captured.out
         assert "line2" in captured.out
 
-    def test_less_with_pattern(self, search_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_with_pattern(self, search_file, capsys, monkeypatch):
         """Test --pattern option to start at first match"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -166,12 +172,13 @@ class TestLess:
             line_numbers=False,
             pattern="cherry",
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should start at or include the pattern
         assert "cherry" in captured.out
 
-    def test_less_ignore_case_pattern(self, search_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_ignore_case_pattern(self, search_file, capsys, monkeypatch):
         """Test --ignore-case with pattern search"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -189,12 +196,13 @@ class TestLess:
             line_numbers=False,
             pattern="CHERRY",  # Uppercase pattern
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should find "cherry" even though pattern is uppercase
         assert "cherry" in captured.out
 
-    def test_less_nonexistent_file(self, capsys):
+    @pytest.mark.asyncio
+    async def test_less_nonexistent_file(self, capsys):
         """Test error handling for nonexistent file"""
         args = Namespace(
             file=["nonexistent.txt"],
@@ -210,12 +218,13 @@ class TestLess:
             pattern=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 1
         captured = capsys.readouterr()
         assert "less:" in captured.err
 
-    def test_less_broken_pipe(self, small_file, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_broken_pipe(self, small_file, monkeypatch):
         """Test handling of broken pipe"""
 
         def raise_broken_pipe(*args, **kwargs):
@@ -239,10 +248,11 @@ class TestLess:
             pattern=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 141
 
-    def test_less_keyboard_interrupt(self, small_file, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_keyboard_interrupt(self, small_file, monkeypatch):
         """Test handling of keyboard interrupt"""
         call_count = {"count": 0}
 
@@ -269,7 +279,7 @@ class TestLess:
             pattern=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await _run(args)
         assert exc_info.value.code == 130
 
     def test_search_forward(self):
@@ -344,7 +354,8 @@ class TestLess:
         assert "1" in captured.out
         assert "2" in captured.out
 
-    def test_less_empty_file(self, workdir, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_empty_file(self, workdir, capsys, monkeypatch):
         """Test less with empty file"""
         empty_file = workdir / "empty.txt"
         empty_file.write_text("")
@@ -365,12 +376,13 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Empty file should produce minimal or no output
         assert len(captured.out) < 10
 
-    def test_less_local_file(self, basic_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_local_file(self, basic_file, capsys, monkeypatch):
         """Test less with local storage file"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -388,11 +400,12 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
 
-    def test_less_no_newline_at_end(self, no_newline_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_no_newline_at_end(self, no_newline_file, capsys, monkeypatch):
         """Test handling of files without trailing newline"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -410,13 +423,14 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
         assert "Line 2" in captured.out
         assert "Line 3" in captured.out
 
-    def test_less_default_to_stdin(self, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_default_to_error(self, capsys, monkeypatch):
         """Test that less defaults to stdin when no files specified"""
         mock_stdin = MockStdin(b"stdin content\n", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -434,11 +448,13 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        with pytest.raises(SystemExit):
+            await _run(args)
         captured = capsys.readouterr()
-        assert "stdin content" in captured.out
+        assert "Missing filename" in captured.err
 
-    def test_less_pattern_not_found(self, search_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_pattern_not_found(self, search_file, capsys, monkeypatch):
         """Test behavior when pattern is not found"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -456,7 +472,7 @@ class TestLess:
             line_numbers=False,
             pattern="notfound",
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should still display the file from the beginning
         assert "apple" in captured.out
@@ -472,7 +488,8 @@ class TestLess:
         result = _search_backward(lines, "[invalid(", 3, ignore_case=False)
         assert result is None
 
-    def test_less_chop_long_lines(self, workdir, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_chop_long_lines(self, workdir, capsys, monkeypatch):
         """Test --chop-long-lines option"""
         long_line_file = workdir / "long_line.txt"
         long_line = "x" * 200 + "\n"
@@ -494,12 +511,13 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         captured = capsys.readouterr()
         # Should have some output, but potentially truncated
         assert len(captured.out) > 0
 
-    def test_less_stdin_with_dash(self, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_stdin_with_dash(self, capsys, monkeypatch):
         """Test less with explicit '-' for stdin"""
         mock_stdin = MockStdin(b"stdin via dash\n", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -517,16 +535,18 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        with pytest.raises(SystemExit):
+            await _run(args)
         captured = capsys.readouterr()
-        assert "stdin via dash" in captured.out
+        assert "reading from stdin is not supported" in captured.err
 
-    def test_less_exit_with_zz(self, basic_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_exit_with_zz(self, basic_file, capsys, monkeypatch):
         """Test exiting with ZZ command"""
-        char_sequence = iter(['Z', 'Z'])
+        char_sequence = iter(["Z", "Z"])
 
         def mock_get_char():
-            return next(char_sequence, 'q')
+            return next(char_sequence, "q")
 
         monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
@@ -544,20 +564,21 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         # Should exit cleanly without error
         captured = capsys.readouterr()
         assert len(captured.out) > 0
 
-    def test_less_exit_with_colon_q(self, basic_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_exit_with_colon_q(self, basic_file, capsys, monkeypatch):
         """Test exiting with :q command"""
-        char_sequence = iter([':'])
+        char_sequence = iter([":"])
 
         def mock_get_char():
-            return next(char_sequence, 'q')
+            return next(char_sequence, "q")
 
         def mock_get_input(prompt):
-            return 'q'
+            return "q"
 
         monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
         monkeypatch.setattr("cloudsh.commands.less._get_input", mock_get_input)
@@ -576,20 +597,21 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         # Should exit cleanly without error
         captured = capsys.readouterr()
         assert len(captured.out) > 0
 
-    def test_less_exit_with_colon_quit(self, basic_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_exit_with_colon_quit(self, basic_file, capsys, monkeypatch):
         """Test exiting with :quit command"""
-        char_sequence = iter([':'])
+        char_sequence = iter([":"])
 
         def mock_get_char():
-            return next(char_sequence, 'q')
+            return next(char_sequence, "q")
 
         def mock_get_input(prompt):
-            return 'quit'
+            return "quit"
 
         monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
         monkeypatch.setattr("cloudsh.commands.less._get_input", mock_get_input)
@@ -608,17 +630,18 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         # Should exit cleanly without error
         captured = capsys.readouterr()
         assert len(captured.out) > 0
 
-    def test_less_single_z_not_exit(self, basic_file, capsys, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_less_single_z_not_exit(self, basic_file, capsys, monkeypatch):
         """Test that single Z doesn't exit (needs ZZ)"""
-        char_sequence = iter(['Z', 'x', 'q'])  # Z, then x (not Z), then q to quit
+        char_sequence = iter(["Z", "x", "q"])  # Z, then x (not Z), then q to quit
 
         def mock_get_char():
-            return next(char_sequence, 'q')
+            return next(char_sequence, "q")
 
         monkeypatch.setattr("cloudsh.commands.less._get_char", mock_get_char)
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
@@ -636,7 +659,7 @@ class TestLess:
             line_numbers=False,
             pattern=None,
         )
-        run(args)
+        await _run(args)
         # Should eventually quit with 'q'
         captured = capsys.readouterr()
         assert len(captured.out) > 0
