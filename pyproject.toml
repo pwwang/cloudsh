@@ -7,35 +7,38 @@ packages = [{ include = "cloudsh" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-panpath = "^0.2"
+panpath = "^0.3"
 argx = "^0.3"
 python-simpleconf = {version = "^0.7", extras = ["toml"]}
-azure-storage-blob = { version = "^12", optional = true }
-azure-storage-file-datalake = { version = "^12", optional = true }
-boto3 = { version = "^1.34", optional = true }
-google-cloud-storage = { version = "^3.0", optional = true }
+aiofiles = "^23.0.0"
 python-dateutil = "^2.9.0.post0"
 argcomplete = "^3.5.3"
+
+azure-storage-blob = { version = "^12", optional = true }
+aioboto3 = {version = ">=11.0.0", optional = true}
+gcloud-aio-storage = {version = ">=8.0.0", optional = true}
 
 [tool.poetry.build]
 generate-setup-file = true
 
 [tool.poetry.extras]
-azure = ["azure-storage-blob", "azure-storage-file-datalake"]
-aws = ["boto3"]
-gs = ["google-cloud-storage"]
-gcs = ["google-cloud-storage"]
-all = ["azure-storage-blob", "azure-storage-file-datalake", "boto3", "google-cloud-storage"]
+azure = ["azure-storage-blob"]
+aws = ["aioboto3"]
+s3 = ["aioboto3"]
+gs = ["gcloud-aio-storage"]
+gcs = ["gcloud-aio-storage"]
+all = ["azure-storage-blob", "aioboto3", "gcloud-aio-storage"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8"
 pytest-cov = "^6"
+pytest-xdist = ">=3.0.0"
 pytest-asyncio = [
     {version = "<1.3", python = "<3.10"},
     {version = "^1.3", python = ">=3.10"}
 ]
 python-dotenv = "^1.0"
-google-cloud-storage = "^3.0"
+gcloud-aio-storage = "^8.0"
 
 [tool.poetry.scripts]
 cloudsh = "cloudsh.main:main"
@@ -45,14 +48,15 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "-vv --cov=cloudsh --cov-report xml:.coverage.xml --cov-report term-missing"
+asyncio_mode = "auto"
+addopts = "-vv -n auto --dist loadgroup --cov=cloudsh --cov-report xml:.coverage.xml --cov-report term-missing"
 filterwarnings = [
-    # "error"
+    "ignore::DeprecationWarning",
 ]
 console_output_style = "progress"
 junit_family = "xunit1"
 
 [tool.black]
-line-length = 87
-target-version = ['py39', 'py310', 'py311', 'py312']
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
 include = '\.pyi?$'

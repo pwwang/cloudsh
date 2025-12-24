@@ -182,7 +182,7 @@ async def _head_cloud_file(
     sys.stdout.buffer.writelines(lines)
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the head command on given files.
 
     Args:
@@ -204,10 +204,3 @@ async def _run(args: Namespace) -> None:
         except (OSError, IOError) as e:
             print(f"{PACKAGE}: {file}: {str(e)}", file=sys.stderr)
             sys.exit(1)
-
-
-def run(args: Namespace) -> None:
-    """Wrapper to run async head command."""
-    import asyncio
-
-    asyncio.run(_run(args))

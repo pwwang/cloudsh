@@ -27,27 +27,27 @@ class TestSink:
         """Restore stdin"""
         sys.stdin = self._orig_stdin
 
-    def test_sink_file(self, tmp_path):
+    async def test_sink_file(self, tmp_path):
         """Test basic sink to file"""
         outfile = tmp_path / "out.txt"
         args = Namespace(
             file=str(outfile),
             append=False,
         )
-        run(args)
+        await run(args)
         assert outfile.read_text() == "test content"
 
-    def test_sink_local_file(self, workdir):
+    async def test_sink_local_file(self, workdir):
         """Test sink to local file"""
         outfile = workdir / "local.txt"
         args = Namespace(
             file=str(outfile),
             append=False,
         )
-        run(args)
+        await run(args)
         assert outfile.read_text() == "test content"
 
-    def test_sink_append_local(self, tmp_path):
+    async def test_sink_append_local(self, tmp_path):
         """Test appending to local file"""
         outfile = tmp_path / "append.txt"
         outfile.write_text("existing\n")
@@ -56,10 +56,10 @@ class TestSink:
             file=str(outfile),
             append=True,
         )
-        run(args)
+        await run(args)
         assert outfile.read_text() == "existing\ntest content"
 
-    def test_sink_append_workdir(self, workdir):
+    async def test_sink_append_workdir(self, workdir):
         """Test appending to workdir file"""
         outfile = workdir / "workdir_append.txt"
         outfile.write_text("existing\n")
@@ -68,10 +68,10 @@ class TestSink:
             file=str(outfile),
             append=True,
         )
-        run(args)
+        await run(args)
         assert outfile.read_text() == "existing\ntest content"
 
-    def test_sink_binary(self, tmp_path):
+    async def test_sink_binary(self, tmp_path):
         """Test sinking binary content"""
         sys.stdin = type(
             "MockStdin",
@@ -89,10 +89,10 @@ class TestSink:
             file=str(outfile),
             append=False,
         )
-        run(args)
+        await run(args)
         assert outfile.read_bytes() == b"binary\x00data"
 
-    def test_sink_permission_error(self, tmp_path, capsys):
+    async def test_sink_permission_error(self, tmp_path, capsys):
         """Test handling permission errors"""
         outfile = tmp_path / "noperm.txt"
         outfile.touch()
@@ -103,11 +103,11 @@ class TestSink:
             append=False,
         )
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
         err = capsys.readouterr().err
         assert "Permission denied" in err
 
-    def test_sink_nonexistent_directory(self, tmp_path, capsys):
+    async def test_sink_nonexistent_directory(self, tmp_path, capsys):
         """Test sinking to file in nonexistent directory"""
         outfile = tmp_path / "nonexistent" / "file.txt"
         args = Namespace(
@@ -115,11 +115,11 @@ class TestSink:
             append=False,
         )
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
         err = capsys.readouterr().err
         assert "No such file or directory" in err
 
-    def test_sink_no_input(self, capsys):
+    async def test_sink_no_input(self, capsys):
         """Test handling no input data"""
         sys.stdin = type(
             "MockStdin",
@@ -135,6 +135,6 @@ class TestSink:
             append=False,
         )
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
         err = capsys.readouterr().err
         assert "no input data provided" in err

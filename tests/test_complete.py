@@ -16,7 +16,7 @@ from cloudsh.commands.complete import (
     _read_cache,
     _update_cache,
     path_completer,
-    _run,
+    run,
 )
 
 
@@ -51,10 +51,10 @@ def cache_setup():
         WARN_CACHING_INDICATOR_FILE.unlink()
 
 
+@pytest.mark.xdist_group("test_complete")
 class TestComplete:
     """Test class for complete command."""
 
-    @pytest.mark.asyncio
     async def test_scan_path_non_cloud(self, cache_setup):
         """Test scanning a non-cloud path should fail."""
         with pytest.raises(SystemExit) as exc_info:
@@ -62,7 +62,6 @@ class TestComplete:
                 pass
         assert exc_info.value.code == 1
 
-    @pytest.mark.asyncio
     async def test_scan_path_nonexistent(self, gcs_bucket, cache_setup):
         """Test scanning a nonexistent path should fail."""
         nonexistent = f"{gcs_bucket}/nonexistent-{uuid4()}"
@@ -71,7 +70,6 @@ class TestComplete:
                 pass
         assert exc_info.value.code == 1
 
-    @pytest.mark.asyncio
     async def test_scan_path_file(self, gcs_bucket, cache_setup):
         """Test scanning a file returns the file path."""
         workspace = f"{gcs_bucket}/test_complete_file_{uuid4()}"
@@ -83,10 +81,9 @@ class TestComplete:
             paths = [p async for p in _scan_path(str(file_path))]
             assert str(file_path) in paths
         finally:
-            file_path.unlink()
-            PanPath(workspace).rmtree()
+            await file_path.a_unlink()
+            await PanPath(workspace).a_rmtree()
 
-    @pytest.mark.asyncio
     async def test_scan_path_directory(self, gcs_bucket, cache_setup):
         """Test scanning a directory."""
         workspace = f"{gcs_bucket}/test_complete_dir_{uuid4()}"
@@ -112,7 +109,6 @@ class TestComplete:
         finally:
             await PanPath(workspace).a_rmtree()
 
-    @pytest.mark.asyncio
     async def test_scan_path_depth_zero(self, gcs_bucket, cache_setup):
         """Test scanning with depth 0."""
         workspace = f"{gcs_bucket}/test_complete_depth_{uuid4()}"
@@ -127,7 +123,6 @@ class TestComplete:
         finally:
             await PanPath(workspace).a_rmtree()
 
-    @pytest.mark.asyncio
     async def test_read_cache_empty(self, cache_setup):
         """Test reading from empty cache."""
         if await COMPLETE_CACHE.a_exists():
@@ -135,7 +130,6 @@ class TestComplete:
         paths = list([p async for p in _read_cache()])
         assert paths == []
 
-    @pytest.mark.asyncio
     async def test_read_cache_with_content(self, cache_setup):
         """Test reading from cache with content."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -145,7 +139,6 @@ class TestComplete:
         paths = list([p async for p in _read_cache()])
         assert paths == test_paths
 
-    @pytest.mark.asyncio
     async def test_update_cache_clear(self, cache_setup):
         """Test clearing cache with specific prefix."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -162,7 +155,6 @@ class TestComplete:
         assert "gs://bucket2/file3.txt" in remaining
         assert "gs://bucket1/file1.txt" not in remaining
 
-    @pytest.mark.asyncio
     async def test_update_cache_add_paths(self, cache_setup):
         """Test adding paths to cache - replaces existing paths with same prefix."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -181,7 +173,6 @@ class TestComplete:
         # Paths with different prefix should remain
         assert "gs://other/file.txt" in cached
 
-    @pytest.mark.asyncio
     async def test_path_completer_empty_prefix(self, cache_setup):
         """Test path completer with empty prefix."""
         results = await path_completer("")
@@ -190,7 +181,6 @@ class TestComplete:
         assert "s3://" in results
         assert "az://" in results
 
-    @pytest.mark.asyncio
     async def test_path_completer_local_path(self, tmp_path, cache_setup):
         """Test path completer with local path."""
         # Create test files
@@ -205,7 +195,6 @@ class TestComplete:
         assert any("test2.txt" in r for r in results)
         assert any("testdir/" in r for r in results)
 
-    @pytest.mark.asyncio
     async def test_path_completer_cloud_no_cache(self, gcs_bucket, cache_setup):
         """Test path completer with cloud path when cache doesn't exist."""
         if await COMPLETE_CACHE.a_exists():
@@ -229,7 +218,6 @@ class TestComplete:
             os.environ.pop("CLOUDSH_COMPLETE_NO_FETCHING_INDICATOR", None)
             await PanPath(workspace).a_rmtree()
 
-    @pytest.mark.asyncio
     async def test_path_completer_cloud_with_cache(self, cache_setup):
         """Test path completer with cloud path when cache exists."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -249,7 +237,6 @@ class TestComplete:
         finally:
             os.environ.pop("CLOUDSH_COMPLETE_CACHING_WARN", None)
 
-    @pytest.mark.asyncio
     async def test_path_completer_cloud_cache_warning(self, cache_setup):
         """Test that cache warning is shown once."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -264,7 +251,6 @@ class TestComplete:
             assert mock_warn.called
             assert "Using cached cloud path completion" in str(mock_warn.call_args)
 
-    @pytest.mark.asyncio
     async def test_path_completer_incomplete_bucket(self, cache_setup):
         """Test path completer with incomplete bucket name."""
         if await COMPLETE_CACHE.a_exists():
@@ -286,7 +272,6 @@ class TestComplete:
         finally:
             os.environ.pop("CLOUDSH_COMPLETE_NO_FETCHING_INDICATOR", None)
 
-    @pytest.mark.asyncio
     async def test_path_completer_cloud_error(self, cache_setup):
         """Test path completer handles errors gracefully."""
         if await COMPLETE_CACHE.a_exists():
@@ -305,7 +290,6 @@ class TestComplete:
         finally:
             os.environ.pop("CLOUDSH_COMPLETE_NO_FETCHING_INDICATOR", None)
 
-    @pytest.mark.asyncio
     async def test_run_clear_cache_all(self, cache_setup):
         """Test clearing entire cache."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -318,11 +302,10 @@ class TestComplete:
             shell=None,
             depth=-1,
         )
-        await _run(args)
+        await run(args)
 
         assert not await COMPLETE_CACHE.a_exists()
 
-    @pytest.mark.asyncio
     async def test_run_clear_cache_prefix(self, cache_setup):
         """Test clearing cache with specific prefix."""
         await COMPLETE_CACHE.parent.a_mkdir(parents=True, exist_ok=True)
@@ -339,13 +322,12 @@ class TestComplete:
             shell=None,
             depth=-1,
         )
-        await _run(args)
+        await run(args)
 
         remaining = (await COMPLETE_CACHE.a_read_text()).strip()
         assert "gs://bucket2/file2.txt" in remaining
         assert "gs://bucket1/file1.txt" not in remaining
 
-    @pytest.mark.asyncio
     async def test_run_update_cache(self, gcs_bucket, cache_setup):
         """Test updating cache."""
         workspace = f"{gcs_bucket}/test_update_cache_{uuid4()}"
@@ -362,7 +344,7 @@ class TestComplete:
                 depth=-1,
             )
 
-            await _run(args)
+            await run(args)
 
             # Cache should be updated
             assert await COMPLETE_CACHE.a_exists()
@@ -371,7 +353,6 @@ class TestComplete:
         finally:
             await PanPath(workspace).a_rmtree()
 
-    @pytest.mark.asyncio
     async def test_run_shell_generation_explicit(self, cache_setup):
         """Test shell completion script generation with explicit shell."""
         args = Namespace(
@@ -383,10 +364,9 @@ class TestComplete:
         )
 
         with patch("sys.stdout") as _:
-            await _run(args)
+            await run(args)
             # Should generate shell completion script
 
-    @pytest.mark.asyncio
     async def test_run_shell_generation_from_env(self, cache_setup):
         """Test shell completion script generation from SHELL env var."""
         args = Namespace(
@@ -399,9 +379,8 @@ class TestComplete:
 
         with patch.dict(os.environ, {"SHELL": "/bin/bash"}):
             with patch("sys.stdout") as _:
-                await _run(args)
+                await run(args)
 
-    @pytest.mark.asyncio
     async def test_run_shell_generation_no_shell(self, cache_setup):
         """Test error when shell cannot be detected."""
         args = Namespace(
@@ -414,5 +393,5 @@ class TestComplete:
 
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(SystemExit) as exc_info:
-                await _run(args)
+                await run(args)
             assert exc_info.value.code == 1

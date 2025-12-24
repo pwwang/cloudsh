@@ -22,7 +22,7 @@ def _parse_mode(mode_str: str | None) -> int:
         sys.exit(1)
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Create directories
 
     Args:
@@ -67,10 +67,3 @@ async def _run(args: Namespace) -> None:
                     file=sys.stderr,
                 )
             sys.exit(1)
-
-
-def run(args: Namespace) -> None:
-    """Execute the mkdir command with given arguments."""
-    import asyncio
-
-    asyncio.run(_run(args))

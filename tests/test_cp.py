@@ -2,7 +2,7 @@ import pytest
 from argparse import Namespace
 
 from panpath import PanPath
-from cloudsh.commands.cp import _run
+from cloudsh.commands.cp import run
 
 
 class TestCp:
@@ -59,7 +59,6 @@ class TestCp:
 
         monkeypatch.setattr("builtins.input", mock_input)
 
-    @pytest.mark.asyncio
     async def test_cp_single_file(self, source_file, workdir, capsys):
         """Test copying a single file"""
         dest = str(workdir / "dest.txt")
@@ -76,13 +75,12 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         dest_path = PanPath(dest)
         assert await dest_path.a_exists()
         assert await dest_path.a_read_text() == "test content"
         assert "-> '" in capsys.readouterr().out
 
-    @pytest.mark.asyncio
     async def test_cp_to_directory(self, source_file, workdir):
         """Test copying file to directory"""
         dest_dir = workdir / "dest_dir"
@@ -100,12 +98,11 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         copied_file = dest_dir / "source.txt"
         assert await copied_file.a_exists()
         assert await copied_file.a_read_text() == "test content"
 
-    @pytest.mark.asyncio
     async def test_cp_recursive(self, source_dir, workdir):
         """Test recursive directory copying"""
         dest_dir = workdir / "dest_dir_recursive"
@@ -122,12 +119,11 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest_dir / "file1.txt").a_exists()
         assert await (dest_dir / "file2.txt").a_exists()
         assert await (dest_dir / "subdir/file3.txt").a_exists()
 
-    @pytest.mark.asyncio
     async def test_cp_interactive_yes(self, source_file, workdir):
         """Test interactive copying with 'yes' response"""
         dest = workdir / "interactive.txt"
@@ -146,10 +142,9 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await dest.a_read_text() == "test content"
 
-    @pytest.mark.asyncio
     async def test_cp_interactive_no(self, source_file, workdir):
         """Test interactive copying with 'no' response"""
         dest = workdir / "interactive_no.txt"
@@ -168,10 +163,9 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await dest.a_read_text() == "original content"
 
-    @pytest.mark.asyncio
     async def test_cp_no_clobber(self, source_file, workdir):
         """Test no-clobber option"""
         dest = workdir / "noclobber.txt"
@@ -189,10 +183,9 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await dest.a_read_text() == "original content"
 
-    @pytest.mark.asyncio
     async def test_cp_preserve(self, source_file, workdir):
         """Test preserving file attributes"""
         dest = str(workdir / "preserved.txt")
@@ -209,12 +202,11 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         src_path = PanPath(source_file)
         dst_path = PanPath(dest)
         assert src_path.stat().st_mode == dst_path.stat().st_mode
 
-    @pytest.mark.asyncio
     async def test_cp_target_directory(self, source_file, workdir):
         """Test using target-directory option"""
         target_dir = str(workdir / "target_dir")
@@ -231,12 +223,11 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         copied_file = PanPath(target_dir) / "source.txt"
         assert await copied_file.a_exists()
         assert await copied_file.a_read_text() == "test content"
 
-    @pytest.mark.asyncio
     async def test_cp_error_handling(self, source_dir, workdir, capsys):
         """Test error handling for various scenarios"""
         # Test copying to existing directory without -r
@@ -256,10 +247,9 @@ class TestCp:
             parents=False,
         )
         with pytest.raises(SystemExit):
-            await _run(args)
+            await run(args)
         assert "cannot copy" in capsys.readouterr().err
 
-    @pytest.mark.asyncio
     async def test_cp_multiple_sources(self, source_file, source_dir, workdir, capsys):
         """Test copying multiple sources to directory"""
         dest_dir = workdir / "multi_dest"
@@ -277,13 +267,12 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         dest_path = PanPath(dest_dir)
         assert await (dest_path / "source.txt").a_exists()
         assert await (dest_path / "source_dir").a_is_dir()
         assert await (dest_path / "source_dir/file1.txt").a_exists()
 
-    @pytest.mark.asyncio
     async def test_cp_local_to_local(self, local_source_dir, tmp_path):
         """Test copying from local to local"""
         dest = PanPath(tmp_path) / "local_dest"
@@ -300,13 +289,12 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest / "file1.txt").a_exists()
         assert await (dest / "file2.txt").a_exists()
         assert await (dest / "subdir" / "file3.txt").a_exists()
         assert await (dest / "file1.txt").a_read_text() == "local1"
 
-    @pytest.mark.asyncio
     async def test_cp_local_to_cloud(self, local_source_dir, workdir):
         """Test copying from local to cloud"""
         dest = workdir / "cloud_dest_from_local"
@@ -323,13 +311,12 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest / "file1.txt").a_exists()
         assert await (dest / "file2.txt").a_exists()
         assert await (dest / "subdir" / "file3.txt").a_exists()
         assert await (dest / "file1.txt").a_read_text() == "local1"
 
-    @pytest.mark.asyncio
     async def test_cp_cloud_to_local(self, cloud_source_dir, tmp_path):
         """Test copying from cloud to local"""
         dest = PanPath(tmp_path) / "local_dest_from_cloud"
@@ -346,13 +333,12 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest / "file1.txt").a_exists()
         assert await (dest / "file2.txt").a_exists()
         assert await (dest / "subdir" / "file3.txt").a_exists()
         assert await (dest / "file1.txt").a_read_text() == "cloud1"
 
-    @pytest.mark.asyncio
     async def test_cp_single_file_local_to_cloud(self, tmp_path, workdir):
         """Test copying single file from local to cloud"""
         local_file = PanPath(tmp_path) / "local.txt"
@@ -372,11 +358,10 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await cloud_dest.a_exists()
         assert await cloud_dest.a_read_text() == "local content"
 
-    @pytest.mark.asyncio
     async def test_cp_single_file_cloud_to_local(self, tmp_path, workdir):
         """Test copying single file from cloud to local"""
         cloud_file = workdir / "cloud_source.txt"
@@ -396,11 +381,10 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await local_dest.a_exists()
         assert await local_dest.a_read_text() == "cloud content"
 
-    @pytest.mark.asyncio
     async def test_cp_parent_not_exists(self, source_file, workdir, capsys):
         """Test copying to non-existent parent directory"""
         dest = workdir / "nonexistent/dest.txt"
@@ -418,11 +402,10 @@ class TestCp:
             parents=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            await _run(args)
+            await run(args)
         assert exc_info.value.code == 1
         assert "No such file or directory" in capsys.readouterr().err
 
-    @pytest.mark.asyncio
     async def test_cp_directory_without_recursive(self, source_dir, workdir, capsys):
         """Test copying directory without -r flag"""
         dest = workdir / "dest"
@@ -440,12 +423,13 @@ class TestCp:
             parents=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            await _run(args)
+            await run(args)
         assert exc_info.value.code == 1
         assert "-r not specified" in capsys.readouterr().err
 
-    @pytest.mark.asyncio
-    async def test_cp_multiple_sources_to_non_directory(self, source_file, workdir, capsys):
+    async def test_cp_multiple_sources_to_non_directory(
+        self, source_file, workdir, capsys
+    ):
         """Test error when copying multiple sources to non-directory"""
         src1 = workdir / "src1.txt"
         await src1.a_write_text("content1")
@@ -467,11 +451,10 @@ class TestCp:
             parents=False,
         )
         with pytest.raises(SystemExit) as exc_info:
-            await _run(args)
+            await run(args)
         assert exc_info.value.code == 1
         assert "target must be a directory" in capsys.readouterr().err
 
-    @pytest.mark.asyncio
     async def test_cp_force_overwrite(self, source_file, workdir):
         """Test force overwriting existing file"""
         dest = workdir / "dest.txt"
@@ -490,10 +473,9 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await dest.a_read_text() == "test content"
 
-    @pytest.mark.asyncio
     async def test_cp_cloud_file_to_cloud_file(self, cloud_workdir):
         """Test copying between two cloud paths"""
         src = cloud_workdir / "cloud_src.txt"
@@ -513,11 +495,10 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await dest.a_exists()
         assert await dest.a_read_text() == "cloud to cloud content"
 
-    @pytest.mark.asyncio
     async def test_cp_cloud_dir_to_cloud_dir_exists(self, cloud_workdir):
         """Test copying cloud directory to existing cloud directory"""
         src_dir = cloud_workdir / "cloud_src_dir"
@@ -541,11 +522,10 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest_dir / "cloud_src_dir/file1.txt").a_exists()
         assert await (dest_dir / "cloud_src_dir/file2.txt").a_exists()
 
-    @pytest.mark.asyncio
     async def test_cp_cloud_dir_to_cloud_dir_not_exists(self, cloud_workdir):
         """Test copying cloud directory to non-existing cloud directory"""
         src_dir = cloud_workdir / "cloud_src_dir2"
@@ -568,6 +548,6 @@ class TestCp:
             no_target_directory=False,
             parents=False,
         )
-        await _run(args)
+        await run(args)
         assert await (dest_dir / "file1.txt").a_exists()
         assert await (dest_dir / "file2.txt").a_exists()

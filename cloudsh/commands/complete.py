@@ -5,11 +5,10 @@ from __future__ import annotations
 import os
 import sys
 import glob
-import asyncio
 from argparse import Namespace
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Generator, Iterable
+from typing import AsyncGenerator, Iterable
 from argcomplete import shellcode, warn
 from panpath import CloudPath, PanPath
 
@@ -19,7 +18,7 @@ COMPLETE_CACHE = PanPath(Path.home() / ".cache" / "cloudsh" / "complete.cache")
 WARN_CACHING_INDICATOR_FILE = PanPath(gettempdir()) / "cloudsh_caching_warned"
 
 
-async def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
+async def _scan_path(path: str, depth: int = -1) -> AsyncGenerator[str, None, None]:
     """Scan a path for files and directories."""
     apath = PanPath(path)
     if not isinstance(apath, CloudPath):
@@ -41,7 +40,7 @@ async def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
         return
 
     dep = 0
-    for p in await apath.a_iterdir():
+    async for p in apath.a_iterdir():
         if await p.a_is_dir():
             yield str(p).rstrip("/") + "/"
             if depth == -1 or dep < depth:
@@ -51,7 +50,7 @@ async def _scan_path(path: str, depth: int = -1) -> Generator[str, None, None]:
             yield str(p)
 
 
-async def _read_cache() -> Generator[str, None, None]:
+async def _read_cache() -> AsyncGenerator[str, None, None]:
     """Read cached paths for a bucket."""
     if await COMPLETE_CACHE.a_exists():
         async with COMPLETE_CACHE.a_open() as f:
@@ -99,15 +98,15 @@ async def path_completer(prefix: str, **kwargs) -> list[str]:
             try:
                 if prefix.endswith("/"):
                     return [
-                        str(p).rstrip("/") + "/" if p.is_dir() else str(p)
-                        for p in await PanPath(prefix).a_iterdir()
+                        str(p).rstrip("/") + "/" if await p.a_is_dir() else str(p)
+                        async for p in PanPath(prefix).a_iterdir()
                     ]
 
                 if prefix.count("/") == 2:  # incomplete bucket name
                     protocol, pref = prefix.split("://", 1)
                     return [
                         str(b).rstrip("/") + "/"
-                        for b in await PanPath(f"{protocol}://").a_iterdir()
+                        async for b in PanPath(f"{protocol}://").a_iterdir()
                         if b.bucket.startswith(pref)
                     ]
 
@@ -140,7 +139,7 @@ async def path_completer(prefix: str, **kwargs) -> list[str]:
     ] + [p for p in ("-", "gs://", "s3://", "az://") if p.startswith(prefix)]
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the complete command with given arguments."""
     if args.clear_cache:
         if not args.path:
@@ -180,13 +179,3 @@ async def _run(args: Namespace) -> None:
         },
     )
     sys.stdout.write(script)
-
-
-def run(args: Namespace) -> None:
-    """Entry point for complete command.
-
-    Args:
-        args: Parsed command line arguments
-    """
-
-    asyncio.run(_run(args))

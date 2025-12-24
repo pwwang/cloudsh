@@ -1,7 +1,7 @@
 """Implementation of more command for both local and cloud files.
 
 This module provides a pager functionality similar to the more command,
-supporting both local files and cloud storage through yunpath.
+supporting both local files and cloud storage through panpath.
 """
 
 from __future__ import annotations
@@ -10,9 +10,9 @@ import os
 import sys
 import tty
 import termios
-from typing import TYPE_CHECKING, BinaryIO, List
+from typing import TYPE_CHECKING, BinaryIO, List, Awaitable
 
-from yunpath import AnyPath
+from panpath import PanPath
 
 from ..utils import PACKAGE
 
@@ -29,12 +29,13 @@ def _get_terminal_size() -> tuple[int, int]:
     try:
         # Try using shutil first (Python 3.3+)
         import shutil
+
         size = shutil.get_terminal_size(fallback=(80, 24))
         return size.lines, size.columns
     except Exception:
         try:
             # Fallback to stty
-            rows, cols = os.popen('stty size', 'r').read().split()
+            rows, cols = os.popen("stty size", "r").read().split()
             return int(rows), int(cols)
         except Exception:
             # Final fallback to default terminal size
@@ -51,7 +52,7 @@ def _get_char() -> str:
     if not sys.stdin.isatty():
         # Not a TTY, just read one character
         ch = sys.stdin.read(1)
-        return ch if ch else 'q'  # Return 'q' on EOF to quit
+        return ch if ch else "q"  # Return 'q' on EOF to quit
 
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -87,8 +88,8 @@ def _display_page(
     for i in range(start, end):
         try:
             sys.stdout.buffer.write(lines[i])
-            if not lines[i].endswith(b'\n'):
-                sys.stdout.write('\n')
+            if not lines[i].endswith(b"\n"):
+                sys.stdout.write("\n")
         except BrokenPipeError:
             sys.exit(141)
 
@@ -118,13 +119,17 @@ def _show_prompt(filename: str, percent: float, args: Namespace) -> str:
     ch = _get_char()
 
     # Clear the prompt line
-    sys.stdout.write('\r' + ' ' * len(prompt) + '\r')
+    sys.stdout.write("\r" + " " * len(prompt) + "\r")
     sys.stdout.flush()
 
     return ch
 
 
-def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
+async def _process_file(
+    fh: BinaryIO | Awaitable,
+    filename: str,
+    args: Namespace,
+) -> None:
     """Process a file and display it page by page.
 
     Args:
@@ -134,19 +139,22 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
     """
     # Read all lines from the file
     content = fh.read()
+    if isinstance(content, Awaitable):
+        content = await content
+
     if not content:
         return
 
     # Split by newline
-    parts = content.split(b'\n')
+    parts = content.split(b"\n")
 
     # Reconstruct lines with newlines
     lines = []
     for i, part in enumerate(parts[:-1]):
-        lines.append(part + b'\n')
+        lines.append(part + b"\n")
 
     # Handle the last part
-    if content.endswith(b'\n'):
+    if content.endswith(b"\n"):
         # Last part is empty, don't add it
         pass
     else:
@@ -158,7 +166,7 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
         squeezed_lines = []
         prev_empty = False
         for line in lines:
-            is_empty = line.strip() == b''
+            is_empty = line.strip() == b""
             if is_empty and prev_empty:
                 continue
             squeezed_lines.append(line)
@@ -176,7 +184,7 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
 
     # Clear screen if not --no-init
     if not args.no_init and not args.print_over and not args.clean_print:
-        sys.stdout.write('\033[2J\033[H')
+        sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
 
     current_line = 0
@@ -206,16 +214,16 @@ def _process_file(fh: BinaryIO, filename: str, args: Namespace) -> None:
         ch = _show_prompt(filename, percent, args)
 
         # Handle user input
-        if ch == 'q' or ch == 'Q':
+        if ch == "q" or ch == "Q":
             # Quit
             break
-        elif ch == ' ':
+        elif ch == " ":
             # Next page
             continue
-        elif ch == '\r' or ch == '\n':
+        elif ch == "\r" or ch == "\n":
             # Next line
-            current_line -= (lines_displayed - 1)
-        elif ch == 'h' or ch == 'H':
+            current_line -= lines_displayed - 1
+        elif ch == "h" or ch == "H":
             # Help
             help_text = """
 Most commands optionally preceded by integer argument k.  Defaults in brackets.
@@ -233,7 +241,7 @@ h or H                  Display this help message
             _get_char()  # Wait for keypress
             # Redisplay current page
             current_line -= lines_displayed
-        elif ch == 'z' or ch == 'Z':
+        elif ch == "z" or ch == "Z":
             # Next page (same as space)
             continue
         else:
@@ -241,7 +249,7 @@ h or H                  Display this help message
             continue
 
 
-def run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the more command.
 
     Args:
@@ -255,12 +263,12 @@ def run(args: Namespace) -> None:
             try:
                 if file == "-":
                     # Process stdin
-                    _process_file(sys.stdin.buffer, "<stdin>", args)
+                    await _process_file(sys.stdin.buffer, "<stdin>", args)
                 else:
                     # Process local or cloud file
-                    path = AnyPath(file)
-                    with path.open("rb") as fh:
-                        _process_file(fh, file, args)
+                    path = PanPath(file)
+                    async with path.a_open("rb") as fh:
+                        await _process_file(fh, file, args)
 
                 # Print separator between files if there are multiple files
                 if len(files) > 1 and i < len(files) - 1:
@@ -271,7 +279,7 @@ def run(args: Namespace) -> None:
 
             except KeyboardInterrupt:
                 # Handle Ctrl+C gracefully
-                sys.stdout.write('\n')
+                sys.stdout.write("\n")
                 sys.exit(130)
             except BrokenPipeError:
                 sys.stderr.close()

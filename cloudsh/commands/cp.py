@@ -74,7 +74,7 @@ async def _copy_path(src: PanPath, dst: PanPath, args: Namespace) -> None:
                 print(f"created directory '{dst}'")
 
             # Copy directory contents
-            for item in await src.a_iterdir():
+            async for item in src.a_iterdir():
                 dst_item = dst / item.name
                 await _copy_path(item, dst_item, args)
         else:
@@ -90,7 +90,7 @@ async def _copy_path(src: PanPath, dst: PanPath, args: Namespace) -> None:
         sys.exit(1)
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the cp command."""
     sources = args.SOURCE
     # Strip trailing slashes from source and destination
@@ -157,10 +157,3 @@ async def _run(args: Namespace) -> None:
                 dst_path = destination / src_path.name
 
         await _copy_path(src_path, dst_path, args)
-
-
-def run(args: Namespace) -> None:
-    """Wrapper to run async cp command."""
-    import asyncio
-
-    asyncio.run(_run(args))

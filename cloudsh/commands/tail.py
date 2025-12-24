@@ -13,6 +13,7 @@ Key features:
 
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 import threading
@@ -20,8 +21,8 @@ import subprocess
 from queue import Queue, Empty as QueueEmpty
 from pathlib import Path
 from typing import TYPE_CHECKING
-from yunpath import AnyPath, CloudPath
-from cloudpathlib.exceptions import NoStatError
+from panpath import PanPath, CloudPath
+from panpath.exceptions import NoStatError
 
 from ..utils import PACKAGE, parse_number
 
@@ -104,7 +105,7 @@ def _check_args(args: Namespace) -> Namespace:
     return args
 
 
-def _tail_cloud_file(
+async def _tail_cloud_file(
     fh: BinaryIO,
     args: Namespace,
     filename: Optional[str] = None,
@@ -139,14 +140,14 @@ def _tail_cloud_file(
 
         if start_at_begin:
             # Skip nbytes from start
-            fh.seek(nbytes - 1 if nbytes > 0 else 0)
-            content = fh.read()
+            await fh.seek(nbytes - 1 if nbytes > 0 else 0)
+            content = await fh.read()
         else:
             # Read last nbytes
-            fh.seek(0, 2)  # Seek to end
-            size = fh.tell()
-            fh.seek(max(0, size - nbytes), 0)
-            content = fh.read()
+            await fh.seek(0, 2)  # Seek to end
+            size = await fh.tell()
+            await fh.seek(max(0, size - nbytes), 0)
+            content = await fh.read()
 
         sys.stdout.buffer.write(content)
         return
@@ -162,16 +163,16 @@ def _tail_cloud_file(
         # Output starting from line num_lines
         skipped = 0
         while skipped < num_lines - 1:
-            line = fh.readline()
+            line = await fh.readline()
             if not line:
                 break
             if line.endswith(delim):
                 skipped += 1
-        content = fh.read()
+        content = await fh.read()
         sys.stdout.buffer.write(content)
     else:
         # Read all lines and output last num_lines
-        content = fh.read()
+        content = await fh.read()
         lines = content.split(delim)
         if lines and not lines[-1]:
             lines.pop()
@@ -208,7 +209,7 @@ def _tail_local_file(args: Namespace, file: str) -> None:
         sys.exit(proc.returncode)
 
 
-def _follow_cloud_file(
+async def _follow_cloud_file(
     path: CloudPath | Path,
     args: Namespace,
     output_queue: Queue,
@@ -241,7 +242,7 @@ def _follow_cloud_file(
     # For local files, get initial content without printing
     if isinstance(path, Path):
         try:
-            last_size = path.stat().st_size
+            last_size = await path.a_stat().st_size
         except FileNotFoundError:
             if not args.retry:
                 return
@@ -249,22 +250,26 @@ def _follow_cloud_file(
 
     while True:
         try:
-            size = path.stat().st_size
+            size = await path.a_stat().st_size
             if size > last_size:
-                with path.open("rb") as fh:
-                    fh.seek(last_size)
-                    content = fh.read()
+                async with path.a_open("rb") as fh:
+                    await fh.seek(last_size)
+                    content = await fh.read()
                     if output_queue and not getattr(output_queue, "_closed", False):
                         output_queue.put((filename, content))
                     else:
                         sys.stdout.buffer.write(content)
                         sys.stdout.buffer.flush()
                 last_size = size
-            time.sleep(float(args.sleep_interval if args.sleep_interval else 1))
+            await asyncio.sleep(
+                float(args.sleep_interval if args.sleep_interval else 1)
+            )
         except (FileNotFoundError, OSError, NoStatError):
             if not args.retry:
                 return
-            time.sleep(float(args.sleep_interval if args.sleep_interval else 1))
+            await asyncio.sleep(
+                float(args.sleep_interval if args.sleep_interval else 1)
+            )
         except (KeyboardInterrupt, BrokenPipeError):
             return
 
@@ -319,7 +324,7 @@ def _follow_local_file(
         proc.wait(timeout=1)
 
 
-def run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the tail command with given arguments.
 
     This is the main entry point that:
@@ -387,7 +392,7 @@ def run(args: Namespace) -> None:
     try:
         for file in args.file:
             try:
-                path = AnyPath(file)
+                path = PanPath(file)
                 if file == "-":
                     # Use GNU tail directly for stdin
                     _tail_local_file(args, file)
@@ -417,10 +422,10 @@ def run(args: Namespace) -> None:
                 else:
                     # Cloud file
                     if not args.follow:
-                        with path.open("rb") as fh:
-                            _tail_cloud_file(fh, args, str(path))
+                        async with path.a_open("rb") as fh:
+                            await _tail_cloud_file(fh, args, str(path))
                     else:
-                        if not path.exists():
+                        if not await path.a_exists():
                             if not args.retry:
                                 print(
                                     f"{PACKAGE} tail: {file}: "
@@ -429,7 +434,7 @@ def run(args: Namespace) -> None:
                                 )
                                 sys.exit(1)
                             # Retry mode: Wait for file to appear
-                            while not path.exists():
+                            while not await path.a_exists():
                                 time.sleep(1)
                         thread = threading.Thread(
                             target=_follow_cloud_file,

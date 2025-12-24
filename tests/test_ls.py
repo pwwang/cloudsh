@@ -3,7 +3,7 @@ from argparse import Namespace
 
 import pytest
 
-from cloudsh.commands.ls import _run
+from cloudsh.commands.ls import run
 
 
 class TestLs:
@@ -32,7 +32,6 @@ class TestLs:
         (path / "subdir/subfile.txt").write_text("subcontent")
         return str(path)
 
-    @pytest.mark.asyncio
     async def test_ls_basic(self, test_dir, capsys):
         """Test basic ls functionality"""
         args = Namespace(
@@ -48,14 +47,13 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "file1.txt" in out
         assert "file2.txt" in out
         assert ".hidden" not in out
         assert "subdir" in out
 
-    @pytest.mark.asyncio
     async def test_ls_all(self, test_dir, capsys):
         """Test ls -a"""
         args = Namespace(
@@ -71,11 +69,10 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert ".hidden" in out
 
-    @pytest.mark.asyncio
     async def test_ls_long(self, test_dir, capsys):
         """Test ls -l"""
         args = Namespace(
@@ -91,7 +88,7 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "file1.txt" in out
         # Check for typical ls -l format elements
@@ -101,7 +98,6 @@ class TestLs:
                 # Should have mode, links, owner, group, size, date, name
                 assert len(line.split()) >= 7
 
-    @pytest.mark.asyncio
     async def test_ls_recursive(self, test_dir, capsys):
         """Test ls -R"""
         args = Namespace(
@@ -117,13 +113,12 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
 
         assert "subdir" in out
         assert "test_dir/subdir:" in out
 
-    @pytest.mark.asyncio
     async def test_ls_sort_size(self, test_dir, capsys):
         """Test ls -S"""
         args = Namespace(
@@ -139,7 +134,7 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         lines = out.strip().split("\n")
         # file2.txt should come before file1.txt (larger)
@@ -147,7 +142,6 @@ class TestLs:
         file2_idx = next(i for i, line in enumerate(lines) if "file2.txt" in line)
         assert file2_idx < file1_idx
 
-    @pytest.mark.asyncio
     async def test_ls_human_readable(self, test_dir, capsys):
         """Test ls -lh"""
         args = Namespace(
@@ -163,11 +157,10 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "K" in out or "B" in out  # Should show sizes in human-readable format
 
-    @pytest.mark.asyncio
     async def test_ls_local_basic(self, local_test_dir, capsys):
         """Test basic ls functionality with local files"""
         args = Namespace(
@@ -183,14 +176,13 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "file1.txt" in out
         assert "file2.txt" in out
         assert ".hidden" not in out
         assert "subdir" in out
 
-    @pytest.mark.asyncio
     async def test_ls_local_long(self, local_test_dir, capsys):
         """Test ls -l with local files"""
         args = Namespace(
@@ -206,7 +198,7 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "file1.txt" in out
         lines = out.strip().split("\n")
@@ -217,7 +209,6 @@ class TestLs:
                 parts = line.split()
                 assert len(parts) >= 7  # Full ls -l format
 
-    @pytest.mark.asyncio
     async def test_ls_local_recursive(self, local_test_dir, capsys):
         """Test ls -R with local files"""
         args = Namespace(
@@ -233,13 +224,12 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert "subdir" in out
         assert "subfile.txt" in out
         assert "test_dir/subdir:" in out
 
-    @pytest.mark.asyncio
     async def test_ls_local_multiple(self, local_test_dir, capsys):
         """Test ls with multiple local files/directories"""
         file1 = Path(local_test_dir) / "file1.txt"
@@ -257,13 +247,12 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         assert str(file1) in out
         assert str(file2) in out
         assert "content1" not in out  # Should not show file contents
 
-    @pytest.mark.asyncio
     async def test_ls_local_sort_size(self, local_test_dir, capsys):
         """Test ls -S with local files"""
         args = Namespace(
@@ -279,7 +268,7 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         lines = out.strip().split("\n")
         # file2.txt (larger) should come before file1.txt
@@ -287,7 +276,6 @@ class TestLs:
         file2_idx = next(i for i, line in enumerate(lines) if "file2.txt" in line)
         assert file2_idx < file1_idx
 
-    @pytest.mark.asyncio
     async def test_ls_local_nonexistent(self, tmp_path, capsys):
         """Test ls with nonexistent local path"""
         nonexistent = str(tmp_path / "nonexistent")
@@ -305,11 +293,10 @@ class TestLs:
             one=False,
         )
         with pytest.raises(SystemExit):
-            await _run(args)
+            await run(args)
         err = capsys.readouterr().err
         assert "cannot access" in err
 
-    @pytest.mark.asyncio
     async def test_ls_local_file_permissions(self, local_test_dir, capsys):
         """Test ls -l shows correct permissions for local files"""
         test_file = Path(local_test_dir) / "test_perms.txt"
@@ -329,12 +316,11 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
         # Should show -rw-r--r-- permissions
         assert "-rw-r--r--" in out
 
-    @pytest.mark.asyncio
     async def test_ls_cloud_nonexistent(self, capsys):
         """Test ls with nonexistent cloud path"""
         cloud_path = "gs://nonexistent_bucket/nonexistent_path"
@@ -352,11 +338,10 @@ class TestLs:
             one=False,
         )
         with pytest.raises(SystemExit):
-            await _run(args)
+            await run(args)
         err = capsys.readouterr().err
         assert "cannot access" in err
 
-    @pytest.mark.asyncio
     async def test_ls_cloud_basic(self, cloud_workdir, capsys):
         """Test basic ls functionality with cloud path (mocked)"""
         cloud_dir = cloud_workdir / "cloud_test_dir"
@@ -378,7 +363,7 @@ class TestLs:
             t=False,
             one=False,
         )
-        await _run(args)
+        await run(args)
         out = capsys.readouterr().out
 
         assert "cloud_file1.txt" in out

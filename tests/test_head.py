@@ -3,7 +3,7 @@ import subprocess
 
 import pytest
 
-from cloudsh.commands.head import _run
+from cloudsh.commands.head import run
 from cloudsh.utils import PACKAGE
 
 
@@ -75,7 +75,6 @@ def local_file_empty_lines(workdir):
     return str(path)
 
 
-@pytest.mark.asyncio
 async def test_head_local_files(local_file, local_file_no_newline, capsys):
     """Test various local file operations in one test"""
     # Test default behavior
@@ -87,30 +86,29 @@ async def test_head_local_files(local_file, local_file_no_newline, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "cloud1\ncloud2\ncloud3\ncloud4\ncloud5\n"
 
     # Test with explicit line count
     args.lines = "2"
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "cloud1\ncloud2\n"
 
     args.lines = "-2"
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "cloud1\ncloud2\ncloud3\n"
 
     # Test with byte count
     args.bytes = "10"
     args.lines = None
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "cloud1\nclo"
 
 
-@pytest.mark.asyncio
 async def test_head_special_cases(workdir, capsys):
     """Test various special cases in one test"""
     # Test empty file
@@ -130,14 +128,13 @@ async def test_head_special_cases(workdir, capsys):
         verbose=True,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert f"==> {empty} <==" in captured.out
     assert f"==> {with_empties} <==" in captured.out
     assert "line1\nline2\n\n\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_zero_terminated(zero_term_file, capsys):
     args = Namespace(
         file=[zero_term_file],
@@ -147,12 +144,11 @@ async def test_head_zero_terminated(zero_term_file, capsys):
         verbose=False,
         zero_terminated=True,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "line1\0line2\0"
 
 
-@pytest.mark.asyncio
 async def test_head_local_chunk_remainder(workdir, capsys):
     """Test handling of partial chunks and remaining data"""
     # Create content that's larger than chunk size (8192)
@@ -169,12 +165,11 @@ async def test_head_local_chunk_remainder(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out.endswith("ab\ncd\n")
 
 
-@pytest.mark.asyncio
 async def test_head_negative_bytes_seek(workdir, capsys):
     """Test that negative bytes follows GNU head behavior for cloud files"""
 
@@ -193,7 +188,7 @@ async def test_head_negative_bytes_seek(workdir, capsys):
     )
 
     # Test cloud file behavior directly
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
 
     # Cloud file now follows GNU head: -5 bytes means all but last 5
@@ -201,7 +196,6 @@ async def test_head_negative_bytes_seek(workdir, capsys):
     assert captured.out == "01234"
 
 
-@pytest.mark.asyncio
 async def test_head_local_error(workdir, capsys):
     """Test error handling for local files"""
     # Try to access a non-existent local path
@@ -215,13 +209,12 @@ async def test_head_local_error(workdir, capsys):
         zero_terminated=False,
     )
     with pytest.raises(SystemExit):
-        await _run(args)
+        await run(args)
     captured = capsys.readouterr()
     # For local files, the error comes from the head command, not cloudsh
     assert "cannot open" in captured.err or f"{PACKAGE}:" in captured.err
 
 
-@pytest.mark.asyncio
 async def test_head_command_error(capsys, monkeypatch):
     def mock_run(*args, **kwargs):
         return subprocess.CompletedProcess(
@@ -238,12 +231,11 @@ async def test_head_command_error(capsys, monkeypatch):
         zero_terminated=False,
     )
     with pytest.raises(SystemExit):
-        await _run(args)
+        await run(args)
     captured = capsys.readouterr()
     assert "some error" in captured.err
 
 
-@pytest.mark.asyncio
 async def test_head_invalid_suffix(temp_file, capsys):
     args = Namespace(
         file=[temp_file],
@@ -254,7 +246,7 @@ async def test_head_invalid_suffix(temp_file, capsys):
         zero_terminated=False,
     )
     with pytest.raises(SystemExit):
-        await _run(args)
+        await run(args)
 
     captured = capsys.readouterr()
     assert "invalid number of bytes" in captured.err
@@ -268,13 +260,12 @@ async def test_head_invalid_suffix(temp_file, capsys):
         zero_terminated=False,
     )
     with pytest.raises(SystemExit):
-        await _run(args)
+        await run(args)
 
     captured = capsys.readouterr()
     assert "invalid number of lines" in captured.err
 
 
-@pytest.mark.asyncio
 async def test_head_stdin(capsys, monkeypatch):
     def mock_run(*args, **kwargs):
         # Simulate what GNU head would do with this input
@@ -291,7 +282,7 @@ async def test_head_stdin(capsys, monkeypatch):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "stdin1\nstdin2\n"
 
@@ -303,12 +294,11 @@ async def test_head_stdin(capsys, monkeypatch):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "stdin1\nstdin2\n"
 
 
-@pytest.mark.asyncio
 async def test_head_multiple_stdin(capsys, monkeypatch):
     def mock_run(*args, **kwargs):
         # Simulate what GNU head would do with this input
@@ -328,13 +318,12 @@ async def test_head_multiple_stdin(capsys, monkeypatch):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert "==> standard input <==" in captured.out
     assert "stdin1\nstdin2\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_bytes_with_suffix(temp_file, capsys):
     args = Namespace(
         file=[temp_file],
@@ -344,13 +333,12 @@ async def test_head_bytes_with_suffix(temp_file, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     # 1K bytes of content
     assert len(captured.out.encode()) <= 1024
 
 
-@pytest.mark.asyncio
 async def test_verbose_mode(temp_file, capsys):
     args = Namespace(
         file=[temp_file],
@@ -360,13 +348,12 @@ async def test_verbose_mode(temp_file, capsys):
         verbose=True,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert f"==> {temp_file} <==" in captured.out
     assert "line1\nline2\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_quiet_mode(temp_file, temp_file_no_newline, capsys):
     args = Namespace(
         file=[temp_file, temp_file_no_newline],
@@ -376,12 +363,11 @@ async def test_quiet_mode(temp_file, temp_file_no_newline, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert "==>" not in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_bytes_with_decimal_suffix(temp_file, capsys):
     args = Namespace(
         file=[temp_file],
@@ -391,12 +377,11 @@ async def test_head_bytes_with_decimal_suffix(temp_file, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert len(captured.out.encode()) <= 1536
 
 
-@pytest.mark.asyncio
 async def test_head_negative_bytes_tiny_file(workdir, capsys):
     """Test negative bytes with a cloud file smaller than requested size"""
 
@@ -415,7 +400,7 @@ async def test_head_negative_bytes_tiny_file(workdir, capsys):
     )
 
     # Test cloud file behavior directly
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
 
     # Following GNU head behavior: when file (3 bytes) is smaller than abs(bytes) (5),
@@ -424,7 +409,6 @@ async def test_head_negative_bytes_tiny_file(workdir, capsys):
     assert captured.out == ""
 
 
-@pytest.mark.asyncio
 async def test_head_local_empty_final_lines(workdir, capsys):
     """Test handling of empty lines at the end of file"""
     content = b"line1\nline2\n\n\n"
@@ -439,12 +423,11 @@ async def test_head_local_empty_final_lines(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert captured.out == "line1\nline2\n\n\n"
 
 
-@pytest.mark.asyncio
 async def test_head_multiple_local_files_with_headers(workdir, capsys):
     """Test header handling with multiple local files"""
     path1 = workdir / "test1.txt"
@@ -460,7 +443,7 @@ async def test_head_multiple_local_files_with_headers(workdir, capsys):
         verbose=True,  # Force headers
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert f"==> {path1} <==" in captured.out
     assert f"==> {path2} <==" in captured.out
@@ -468,7 +451,6 @@ async def test_head_multiple_local_files_with_headers(workdir, capsys):
     assert "file2\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_basic(workdir, capsys):
     """Test head on cloud file with basic line count"""
     cloud_file = workdir / "cloud_head_test.txt"
@@ -483,7 +465,7 @@ async def test_head_cloud_file_basic(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert "line1\n" in captured.out
     assert "line2\n" in captured.out
@@ -491,7 +473,6 @@ async def test_head_cloud_file_basic(workdir, capsys):
     assert "line4" not in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_negative_lines(workdir, capsys):
     """Test head on cloud file with negative line count"""
     cloud_file = workdir / "cloud_head_neg.txt"
@@ -506,7 +487,7 @@ async def test_head_cloud_file_negative_lines(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert "line1\n" in captured.out
     assert "line2\n" in captured.out
@@ -515,7 +496,6 @@ async def test_head_cloud_file_negative_lines(workdir, capsys):
     assert "line5" not in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_bytes(workdir, capsys):
     """Test head on cloud file with byte count"""
     cloud_file = workdir / "cloud_head_bytes.txt"
@@ -530,13 +510,12 @@ async def test_head_cloud_file_bytes(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     # Should output first 10 bytes
     assert captured.out == "abcdefghij"
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_negative_bytes(workdir, capsys):
     """Test head on cloud file with negative byte count"""
     cloud_file = workdir / "cloud_head_neg_bytes.txt"
@@ -551,13 +530,12 @@ async def test_head_cloud_file_negative_bytes(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     # Should output all but last 10 bytes: abcdefghijklmnop
     assert captured.out == "abcdefghijklmnop"
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_zero_terminated(workdir, capsys):
     """Test head on cloud file with zero-terminated records"""
     cloud_file = workdir / "cloud_head_zero.txt"
@@ -572,14 +550,13 @@ async def test_head_cloud_file_zero_terminated(workdir, capsys):
         verbose=False,
         zero_terminated=True,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     # First 2 zero-terminated records
     assert b"rec1\0" in captured.out.encode()
     assert b"rec2\0" in captured.out.encode()
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_multiple_with_headers(workdir, capsys):
     """Test head on multiple cloud files with headers"""
     cloud_file1 = workdir / "cloud1.txt"
@@ -595,7 +572,7 @@ async def test_head_cloud_file_multiple_with_headers(workdir, capsys):
         verbose=False,  # Should still show headers for multiple files
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert f"==> {cloud_file1} <==" in captured.out
     assert f"==> {cloud_file2} <==" in captured.out
@@ -603,7 +580,6 @@ async def test_head_cloud_file_multiple_with_headers(workdir, capsys):
     assert "file2_line1\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_quiet_mode(workdir, capsys):
     """Test head on cloud file in quiet mode (no headers)"""
     cloud_file1 = workdir / "cloud_quiet1.txt"
@@ -619,14 +595,13 @@ async def test_head_cloud_file_quiet_mode(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     assert "==>" not in captured.out  # No headers
     assert "content1\n" in captured.out
     assert "content2\n" in captured.out
 
 
-@pytest.mark.asyncio
 async def test_head_cloud_file_with_chunks(workdir, capsys):
     """Test head on cloud file that requires chunked reading"""
     cloud_file = workdir / "cloud_large.txt"
@@ -643,7 +618,7 @@ async def test_head_cloud_file_with_chunks(workdir, capsys):
         verbose=False,
         zero_terminated=False,
     )
-    await _run(args)
+    await run(args)
     captured = capsys.readouterr()
     # Should have first 10 lines
     for i in range(10):

@@ -19,7 +19,7 @@ def workdir(tmp_path_factory):
 
 
 @pytest.fixture
-def cloud_workdir(request):
+async def cloud_workdir(request):
     """
     Create a temporary cloud workdir for tests.
     Uses a cloud bucket specified by BUCKET environment variable.
@@ -31,7 +31,7 @@ def cloud_workdir(request):
         f"{request.node.name}_"
         f"{uuid.uuid4().hex}"
     )
-    cloud_workdir.mkdir(parents=True, exist_ok=True)
+    await cloud_workdir.a_mkdir(parents=True, exist_ok=True)
     yield cloud_workdir
     # Cleanup after tests
-    cloud_workdir.rmtree()
+    await cloud_workdir.a_rmtree()

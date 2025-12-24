@@ -1,6 +1,7 @@
 import os
 import signal
 import sys
+import asyncio
 import time
 from argparse import Namespace
 import subprocess
@@ -41,9 +42,9 @@ class TailTester:
                 os.dup2(output_fd, sys.stderr.fileno())
                 os.close(output_fd)
 
-                # Run tail command
+                # Run tail command in an event loop inside the child process
                 try:
-                    run(args)
+                    asyncio.run(run(args))
                 except KeyboardInterrupt:
                     pass
                 finally:
@@ -140,7 +141,7 @@ class TestTail:
             del _print_header.printed
         yield
 
-    def test_tail_default(self, cloud_file, capsys):
+    async def test_tail_default(self, cloud_file, capsys):
         """Test basic tail functionality"""
         args = Namespace(
             file=[cloud_file],
@@ -156,11 +157,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "cloud1\ncloud2\ncloud3\ncloud4\ncloud5\n"
 
-    def test_tail_bytes(self, cloud_file, capsys):
+    async def test_tail_bytes(self, cloud_file, capsys):
         """Test tail with byte count"""
         args = Namespace(
             file=[cloud_file],
@@ -176,11 +177,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "d4\ncloud5\n"
 
-    def test_tail_bytes_from_start(self, cloud_file, capsys):
+    async def test_tail_bytes_from_start(self, cloud_file, capsys):
         args = Namespace(
             file=[cloud_file],
             bytes="+10",  # Start from byte 10
@@ -195,11 +196,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out.startswith("oud2\ncloud3")
 
-    def test_tail_lines(self, cloud_file, capsys):
+    async def test_tail_lines(self, cloud_file, capsys):
         args = Namespace(
             file=[cloud_file],
             bytes=None,
@@ -214,11 +215,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "cloud4\ncloud5\n"
 
-    def test_tail_lines_from_start(self, cloud_file, capsys):
+    async def test_tail_lines_from_start(self, cloud_file, capsys):
         args = Namespace(
             file=[cloud_file],
             bytes=None,
@@ -233,11 +234,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "cloud2\ncloud3\ncloud4\ncloud5\n"
 
-    def test_tail_follow(self, tail_tester, growing_file):
+    async def test_tail_follow(self, tail_tester, growing_file):
         """Test tail -f with a growing file"""
         path = Path(growing_file)
         # Ensure initial content is present
@@ -270,7 +271,7 @@ class TestTail:
         assert "line1" in content
         assert "line2" in content
 
-    def test_tail_F(self, tail_tester, growing_file):
+    async def test_tail_F(self, tail_tester, growing_file):
         """Test tail -f with a growing file"""
         path = Path(growing_file)
         # Ensure initial content is present
@@ -303,7 +304,7 @@ class TestTail:
         assert "line1" in content
         assert "line2" in content
 
-    def test_tail_pid_monitoring(self, capsys, monkeypatch):
+    async def test_tail_pid_monitoring(self, capsys, monkeypatch):
         """Test PID monitoring with stdin"""
 
         def mock_run(*args, **kwargs):
@@ -327,11 +328,11 @@ class TestTail:
             sleep_interval="0.1",
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "some output" in captured.out
 
-    def test_tail_invalid_pid(self, capsys):
+    async def test_tail_invalid_pid(self, capsys):
         args = Namespace(
             file=["-"],
             bytes=None,
@@ -347,12 +348,12 @@ class TestTail:
             max_unchanged_stats=None,
         )
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
 
         captured = capsys.readouterr()
         assert "invalid PID" in captured.err
 
-    def test_tail_multiple_files(self, cloud_file, growing_file, capsys):
+    async def test_tail_multiple_files(self, cloud_file, growing_file, capsys):
         args = Namespace(
             file=[cloud_file, growing_file],
             bytes=None,
@@ -367,13 +368,13 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "==> " in captured.out
         assert "cloud4\ncloud5\n" in captured.out
         assert "line1\n" in captured.out
 
-    def test_tail_zero_terminated(self, workdir, capsys):
+    async def test_tail_zero_terminated(self, workdir, capsys):
         content = b"line1\0line2\0line3\0"
         path = workdir / "zero.txt"
         path.write_bytes(content)
@@ -392,11 +393,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "line2\0line3\0"
 
-    def test_tail_invalid_suffix(self, cloud_file, capsys):
+    async def test_tail_invalid_suffix(self, cloud_file, capsys):
         args = Namespace(
             file=[cloud_file],
             bytes="1X",  # Invalid suffix
@@ -412,7 +413,7 @@ class TestTail:
             max_unchanged_stats=None,
         )
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
 
         captured = capsys.readouterr()
         assert "invalid number of bytes" in captured.err
@@ -420,12 +421,12 @@ class TestTail:
         args.bytes = None
         args.lines = "1X"
         with pytest.raises(SystemExit):
-            run(args)
+            await run(args)
 
         captured = capsys.readouterr()
         assert "invalid number of lines" in captured.err
 
-    def test_tail_F_retry_file_appears(self, tail_tester, workdir):
+    async def test_tail_F_retry_file_appears(self, tail_tester, workdir):
         """Test -F option with file appearing after start"""
         nonexistent = workdir / "appears.txt"
         args = Namespace(
@@ -450,7 +451,7 @@ class TestTail:
         content = tail_tester.wait_for_content("new content")
         assert "new content" in content
 
-    def test_tail_follow_multiple_cloud_files(self, tail_tester, workdir):
+    async def test_tail_follow_multiple_cloud_files(self, tail_tester, workdir):
         """Test following multiple cloud files simultaneously"""
         file1 = workdir / "multi1.txt"
         file2 = workdir / "multi2.txt"
@@ -486,7 +487,7 @@ class TestTail:
         assert "initial2" in content
         assert "update2" in content
 
-    def test_tail_follow_file_disappears(self, tail_tester, workdir):
+    async def test_tail_follow_file_disappears(self, tail_tester, workdir):
         """Test following a file that disappears."""
         temp_file = workdir / "disappearing.txt"
         temp_file.write_text("initial\n")
@@ -523,19 +524,19 @@ class TestTail:
     @pytest.mark.skip(
         reason="Cannot patch stat method on PosixPath - read-only attribute"
     )
-    def test_tail_follow_stat_error(self, tail_tester, workdir):
+    async def test_tail_follow_stat_error(self, tail_tester, workdir):
         """Test handling of stat errors during follow"""
         # This test is skipped because Path.stat is a read-only attribute
         # and cannot be patched in the current implementation
         pass
 
     @pytest.mark.skip(reason="Flaky test - timing issues with follow mode")
-    def test_tail_zero_terminated_follow(self, tail_tester, workdir):
+    async def test_tail_zero_terminated_follow(self, tail_tester, workdir):
         """Test following zero-terminated file"""
         # This test is skipped due to timing issues in follow mode
         pass
 
-    def test_tail_broken_pipe(self, tail_tester, workdir):
+    async def test_tail_broken_pipe(self, tail_tester, workdir):
         """Test handling of broken pipe during output"""
         file = workdir / "pipe.txt"
         file.write_text("initial\n")
@@ -561,7 +562,7 @@ class TestTail:
         time.sleep(0.2)
         tail_tester.stop()
 
-    def test_tail_follow_errors(self, tail_tester):
+    async def test_tail_follow_errors(self, tail_tester):
         """Test error handling in follow mode"""
         args = Namespace(
             file=["nonexistent"],
@@ -582,7 +583,7 @@ class TestTail:
         content = tail_tester.stop()
         assert "No such file or directory" in content
 
-    def test_tail_no_file(self, capsys, monkeypatch):
+    async def test_tail_no_file(self, capsys, monkeypatch):
         """Test tail behavior when no file is passed (should use stdin)"""
 
         def mock_run(*args, **kwargs):
@@ -607,11 +608,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "content from stdin" in captured.out
 
-    def test_tail_cloud_file_basic(self, workdir, capsys):
+    async def test_tail_cloud_file_basic(self, workdir, capsys):
         """Test tail on cloud file"""
         cloud_file = workdir / "cloud_tail.txt"
         lines = b"line1\nline2\nline3\nline4\nline5\n"
@@ -632,14 +633,14 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "line8\n" in captured.out
         assert "line9\n" in captured.out
         assert "line10\n" in captured.out
         assert "line7" not in captured.out
 
-    def test_tail_cloud_file_bytes(self, workdir, capsys):
+    async def test_tail_cloud_file_bytes(self, workdir, capsys):
         """Test tail on cloud file with byte count"""
         cloud_file = workdir / "cloud_tail_bytes.txt"
         content = b"0123456789abcdefghij"
@@ -659,11 +660,11 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert captured.out == "fghij"
 
-    def test_tail_cloud_file_bytes_from_start(self, workdir, capsys):
+    async def test_tail_cloud_file_bytes_from_start(self, workdir, capsys):
         """Test tail on cloud file with +bytes (from start)"""
         cloud_file = workdir / "cloud_tail_bytes_start.txt"
         content = b"0123456789abcdefghij"
@@ -683,12 +684,12 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should output from 6th byte onwards (index 5)
         assert captured.out == "56789abcdefghij"
 
-    def test_tail_cloud_file_lines_from_start(self, workdir, capsys):
+    async def test_tail_cloud_file_lines_from_start(self, workdir, capsys):
         """Test tail on cloud file with +lines (from start)"""
         cloud_file = workdir / "cloud_tail_lines_start.txt"
         content = b"line1\nline2\nline3\nline4\nline5\n"
@@ -708,7 +709,7 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should output from 3rd line onwards
         assert "line3\n" in captured.out
@@ -717,7 +718,7 @@ class TestTail:
         assert "line1" not in captured.out
         assert "line2" not in captured.out
 
-    def test_tail_cloud_file_zero_terminated(self, workdir, capsys):
+    async def test_tail_cloud_file_zero_terminated(self, workdir, capsys):
         """Test tail on cloud file with zero-terminated lines"""
         cloud_file = workdir / "cloud_tail_zero.txt"
         content = b"rec1\0rec2\0rec3\0rec4\0rec5\0"
@@ -737,12 +738,12 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert b"rec4\0" in captured.out.encode()
         assert b"rec5\0" in captured.out.encode()
 
-    def test_tail_cloud_file_with_verbose(self, workdir, capsys):
+    async def test_tail_cloud_file_with_verbose(self, workdir, capsys):
         """Test tail on cloud file with verbose (shows header)"""
         cloud_file = workdir / "cloud_tail_verbose.txt"
         content = b"line1\nline2\nline3\n"
@@ -762,13 +763,13 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert f"==> {cloud_file} <==" in captured.out
         assert "line2\n" in captured.out
         assert "line3\n" in captured.out
 
-    def test_tail_cloud_multiple_files(self, workdir, capsys):
+    async def test_tail_cloud_multiple_files(self, workdir, capsys):
         """Test tail on multiple cloud files"""
         cloud_file1 = workdir / "cloud1.txt"
         cloud_file2 = workdir / "cloud2.txt"
@@ -789,7 +790,7 @@ class TestTail:
             sleep_interval=None,
             max_unchanged_stats=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should show headers for multiple files
         assert f"==> {cloud_file1} <==" in captured.out

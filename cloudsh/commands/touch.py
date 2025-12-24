@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from typing import TYPE_CHECKING
 from dateutil import parser as date_parser
-from yunpath import AnyPath, CloudPath
+from panpath import PanPath, CloudPath
 
 from ..utils import PACKAGE
 
@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from argx import Namespace
 
 
-def _parse_timestamp(args: Namespace) -> tuple[float | None, float | None]:
+async def _parse_timestamp(args: Namespace) -> tuple[float | None, float | None]:
     """Parse timestamp from args, returns (atime, mtime) tuple"""
     if args.reference:
-        ref_path = AnyPath(args.reference)
-        if not ref_path.exists():
+        ref_path = PanPath(args.reference)
+        if not await ref_path.a_exists():
             raise FileNotFoundError(f"Reference file not found: {args.reference}")
-        ref_stat = ref_path.stat()
+        ref_stat = await ref_path.a_stat()
         return ref_stat.st_atime, ref_stat.st_mtime
 
     if args.date:
@@ -60,25 +60,25 @@ def _parse_timestamp(args: Namespace) -> tuple[float | None, float | None]:
     return ts if args.a or not args.m else None, ts if args.m or not args.a else None
 
 
-def run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Update file timestamps or create empty files"""
     try:
-        atime, mtime = _parse_timestamp(args)
+        atime, mtime = await _parse_timestamp(args)
     except Exception as e:
         sys.stderr.write(f"{PACKAGE} touch: {str(e)}\n")
         sys.exit(1)
 
     for file in args.file:
-        path = AnyPath(file)
+        path = PanPath(file)
         try:
-            exists = path.exists()
+            exists = await path.a_exists()
             if not exists and args.no_create:
                 continue
 
             if isinstance(path, CloudPath):
                 # Cloud files only support mtime through metadata
                 if not exists:
-                    path.touch()
+                    await path.a_touch()
                 if mtime is not None:
                     # Update cloud file metadata
                     blob = path.client.client.bucket(path.bucket).get_blob(path.blob)
@@ -89,9 +89,9 @@ def run(args: Namespace) -> None:
             else:
                 # Local files support both atime and mtime
                 if not exists:
-                    path.touch()
+                    await path.a_touch()
                 if atime is not None or mtime is not None:
-                    current = path.stat()
+                    current = await path.a_stat()
                     os.utime(
                         path,
                         (

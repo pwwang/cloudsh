@@ -172,7 +172,7 @@ async def _list_entries(
         entries = []
         # Store entry objects for sorting
         entry_objects = []
-        for entry in await path.a_iterdir():
+        async for entry in path.a_iterdir():
             name = entry.name
             if not all and not almost_all and name.startswith("."):
                 continue
@@ -213,7 +213,7 @@ async def _list_entries(
         return []
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the ls command with given arguments."""
     # Default to current directory if no files specified
     paths = [PanPath(".")] if not args.file else [PanPath(f) for f in args.file]
@@ -248,7 +248,7 @@ async def _run(args: Namespace) -> None:
                 print("\n".join(entries))
 
             if args.recursive and await path.a_is_dir():
-                for entry in await path.a_iterdir():
+                async for entry in path.a_iterdir():
                     if await entry.a_is_dir() and not entry.name.startswith("."):
                         print()
                         # Get just the parent and current directory names
@@ -257,15 +257,8 @@ async def _run(args: Namespace) -> None:
                         # print(f"{entry}:")
                         recurse_args = Namespace(**vars(args))
                         recurse_args.file = [str(entry)]
-                        await _run(recurse_args)
+                        await run(recurse_args)
 
         except OSError as e:
             print(f"{PACKAGE} ls: cannot access '{path}': {str(e)}", file=sys.stderr)
             sys.exit(1)
-
-
-def run(args: Namespace) -> None:
-    """Synchronous wrapper to run the ls command."""
-    import asyncio
-
-    asyncio.run(_run(args))

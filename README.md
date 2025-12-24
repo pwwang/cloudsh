@@ -8,8 +8,7 @@ Cloud Storage Provider dependencies:
 
 [![google-cloud-storage][10]][11] \
 [![boto3][12]][13] \
-[![azure-storage-blob][14]][15] \
-[![azure-storage-file-datalake][16]][17]
+[![azure-storage-blob][14]][15]
 
 ## Installation
 
@@ -171,5 +170,3 @@ cloudsh complete --update-cache --depth 2 gs://my-bucket
 [13]: https://pypi.org/project/boto3/
 [14]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.azure-storage-blob.version&prefix=version%3A&style=flat-square&label=azure-storage-blob
 [15]: https://pypi.org/project/azure-storage-blob/
-[16]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.azure-storage-file-datalake.version&prefix=version%3A&style=flat-square&label=azure-storage-file-datalake
-[17]: https://pypi.org/project/azure-storage-file-datalake/

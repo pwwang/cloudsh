@@ -526,7 +526,7 @@ async def _process_file(fh: AsyncFileHandle, filename: str, args: Namespace) -> 
             _exit_alternate_screen()
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the less command.
 
     Args:
@@ -571,14 +571,3 @@ async def _run(args: Namespace) -> None:
     except BrokenPipeError:
         sys.stderr.close()
         sys.exit(141)
-
-
-def run(args: Namespace) -> None:
-    """Entry point for less command.
-
-    Args:
-        args: Parsed command line arguments
-    """
-    import asyncio
-
-    asyncio.run(_run(args))

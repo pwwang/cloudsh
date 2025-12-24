@@ -1,5 +1,6 @@
 # PYTHON_ARGCOMPLETE_OK
 import sys
+import asyncio
 import importlib
 import subprocess
 from pathlib import Path
@@ -62,4 +63,4 @@ def main():
 
     args = create_parser().parse_args()
     module = importlib.import_module(f".commands.{args.COMMAND}", package=PACKAGE)
-    module.run(args)
+    asyncio.run(module.run(args))

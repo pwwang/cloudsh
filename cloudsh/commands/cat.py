@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import sys
 import asyncio
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, AsyncGenerator
 
 from panpath import PanPath, LocalPath
 from panpath.clients import AsyncFileHandle
+
+from ..utils import PACKAGE
 
 if TYPE_CHECKING:
     from argx import Namespace
@@ -161,7 +163,7 @@ async def _process_local_file(
 async def _process_cloud_file(
     fh: AsyncFileHandle,
     args,
-) -> Iterator[bytes]:
+) -> AsyncGenerator[bytes]:
     """Process a file according to cat options.
 
     Args:
@@ -218,7 +220,7 @@ async def _process_cloud_file(
         yield line
 
 
-async def _run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the cat command.
 
     Args:
@@ -253,7 +255,7 @@ async def _run(args: Namespace) -> None:
                     path = PanPath(file)
                     if await path.a_exists() is False:
                         print(
-                            f"cloudsh cat: {file}: No such file or directory",
+                            f"{PACKAGE} cat: {file}: No such file or directory",
                             file=sys.stderr,
                         )
                         sys.exit(1)
@@ -277,12 +279,3 @@ async def _run(args: Namespace) -> None:
 
     except KeyboardInterrupt:
         sys.exit(130)  # Standard Unix practice
-
-
-def run(args: Namespace) -> None:
-    """Entry point for cat command.
-
-    Args:
-        args: Parsed command line arguments
-    """
-    asyncio.run(_run(args))

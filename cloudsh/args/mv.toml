@@ -63,6 +63,5 @@ help = """Control which existing files are updated:
 'none' is like --no-clobber but skips don't cause failure,
 'older' is default when --update used (replace if older)"""
 choices = ["all", "none", "older"]
-default = "older"
+default = "all"
 nargs = "?"
-const = "older"

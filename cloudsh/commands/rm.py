@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
-from yunpath import AnyPath, CloudPath
+from panpath import PanPath
 
 from ..utils import PACKAGE
 
@@ -23,7 +23,7 @@ def _prompt_user(prompt: str) -> bool:
             return False
 
 
-def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
+async def _remove_path(path: Path, args, prompt: bool = False) -> bool:
     """Remove a single file or directory.
 
     Returns:
@@ -34,86 +34,32 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
             if not _prompt_user(f"rm: remove '{path}'? "):
                 return True
 
-        if isinstance(path, CloudPath):
-            try:
-                if path.is_dir():
-                    if args.recursive:
-                        path.rmtree()
-                        if args.verbose:
-                            print(f"removed directory '{path}'")
-                        return True
-                    elif args.dir:
-                        # For cloud paths, attempt to list directory contents
-                        try:
-                            next(path.iterdir())
-                            if not args.force:
-                                sys.stderr.write(
-                                    f"{PACKAGE} rm: cannot remove '{path}': "
-                                    "Directory not empty\n"
-                                )
-                                return False
-                        except StopIteration:
-                            # Directory is empty, safe to remove
-                            path.rmtree()
-                            if args.verbose:
-                                print(f"removed directory '{path}'")
-                            return True
-                    else:
-                        if not args.force:
-                            sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': "
-                                "Is a directory\n"
-                            )
-                        return False
+        try:
+            if await path.a_is_dir():
+                if args.recursive:
+                    await path.a_rmtree()
+                elif args.dir:
+                    await path.a_rmdir()
                 else:
-                    if not path.exists():
-                        if not args.force:
-                            sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': "
-                                "No such file or directory\n"
-                            )
-                            return False
-                        return True
-                    path.unlink()
-                    if args.verbose:
-                        print(f"removed '{path}'")
-                    return True
-            except FileNotFoundError:  # pragma: no cover
-                if not args.force:
-                    sys.stderr.write(
-                        f"{PACKAGE} rm: cannot remove '{path}': "
-                        "No such file or directory\n"
-                    )
-                return args.force
+                    if not args.force:
+                        sys.stderr.write(
+                            f"{PACKAGE} rm: cannot remove '{path}': "
+                            "Is a directory\n"
+                        )
+                    return False
+            else:
+                await path.a_unlink(missing_ok=args.force)
 
-        else:
-            # Local path
-            try:
-                if path.is_dir():
-                    if args.recursive:
-                        path.rmtree()
-                    elif args.dir:
-                        path.rmdir()
-                    else:
-                        if not args.force:
-                            sys.stderr.write(
-                                f"{PACKAGE} rm: cannot remove '{path}': "
-                                "Is a directory\n"
-                            )
-                        return False
-                else:
-                    path.unlink(missing_ok=args.force)
-
-                if args.verbose:
-                    print(f"removed '{path}'")
-                return True
-            except FileNotFoundError:  # pragma: no cover
-                if not args.force:
-                    sys.stderr.write(
-                        f"{PACKAGE} rm: cannot remove '{path}': "
-                        "No such file or directory\n"
-                    )
-                return args.force
+            if args.verbose:
+                print(f"removed '{path}'")
+            return True
+        except FileNotFoundError:  # pragma: no cover
+            if not args.force:
+                sys.stderr.write(
+                    f"{PACKAGE} rm: cannot remove '{path}': "
+                    "No such file or directory\n"
+                )
+            return args.force
 
     except OSError as e:  # pragma: no cover
         if not args.force:
@@ -121,7 +67,7 @@ def _remove_path(path: CloudPath | Path, args, prompt: bool = False) -> bool:
         return False
 
 
-def run(args: Namespace) -> None:
+async def run(args: Namespace) -> None:
     """Execute the rm command.
 
     Args:
@@ -146,8 +92,8 @@ def run(args: Namespace) -> None:
 
     success = True
     for filepath in args.file:
-        path = AnyPath(filepath)
-        if not _remove_path(path, args, prompt=prompt_all):
+        path = PanPath(filepath)
+        if not await _remove_path(path, args, prompt=prompt_all):
             success = False
 
     if not success:

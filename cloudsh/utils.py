@@ -44,6 +44,7 @@ def parse_number(value: str) -> int:
     if not value:  # pragma: no cover
         raise ValueError("Empty value")
 
+    value = str(value).strip()
     negative = value.startswith("-")
     if negative:
         value = value[1:]

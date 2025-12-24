@@ -19,7 +19,7 @@ class MockStdin:
         return self._is_tty
 
     def read(self, n):
-        return 'q'  # Always return 'q' to quit
+        return "q"  # Always return 'q' to quit
 
 
 class TestMore:
@@ -62,7 +62,7 @@ class TestMore:
         assert rows > 0
         assert cols > 0
 
-    def test_more_with_stdin_quit(self, capsys, monkeypatch):
+    async def test_more_with_stdin_quit(self, capsys, monkeypatch):
         """Test more with stdin input and immediate quit"""
         mock_stdin = MockStdin(b"line1\nline2\nline3\n", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -78,11 +78,11 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "line1" in captured.out
 
-    def test_more_no_pause_mode(self, small_file, capsys, monkeypatch):
+    async def test_more_no_pause_mode(self, small_file, capsys, monkeypatch):
         """Test more with --no-pause option (print all without paging)"""
         # Mock isatty to return False
         monkeypatch.setattr("sys.stdin.isatty", lambda: False)
@@ -98,13 +98,18 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
         assert "Line 2" in captured.out
         assert "Line 3" in captured.out
 
-    def test_more_squeeze_blank_lines(self, empty_lines_file, capsys, monkeypatch):
+    async def test_more_squeeze_blank_lines(
+        self,
+        empty_lines_file,
+        capsys,
+        monkeypatch,
+    ):
         """Test --squeeze option to compress multiple blank lines"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -120,7 +125,7 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should not have more than 2 consecutive newlines
         assert "\n\n\n" not in captured.out
@@ -128,7 +133,7 @@ class TestMore:
         assert "line2" in captured.out
         assert "line3" in captured.out
 
-    def test_more_custom_lines(self, basic_file, capsys, monkeypatch):
+    async def test_more_custom_lines(self, basic_file, capsys, monkeypatch):
         """Test --lines option to set custom screen size"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -144,12 +149,12 @@ class TestMore:
             plain=False,
             lines=5,  # Show 5 lines at a time
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # With 5 lines per screen and immediate quit, should see first few lines
         assert "Line 1" in captured.out
 
-    def test_more_no_init(self, small_file, capsys, monkeypatch):
+    async def test_more_no_init(self, small_file, capsys, monkeypatch):
         """Test --no-init option (don't clear screen)"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -165,12 +170,12 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should not contain escape sequence for clearing screen
         assert "Line 1" in captured.out
 
-    def test_more_nonexistent_file(self, capsys):
+    async def test_more_nonexistent_file(self, capsys):
         """Test error handling for nonexistent file"""
         args = Namespace(
             file=["nonexistent.txt"],
@@ -184,12 +189,14 @@ class TestMore:
             lines=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await run(args)
         assert exc_info.value.code == 1
         captured = capsys.readouterr()
         assert "more:" in captured.err
 
-    def test_more_multiple_files(self, small_file, basic_file, capsys, monkeypatch):
+    async def test_more_multiple_files(
+        self, small_file, basic_file, capsys, monkeypatch
+    ):
         """Test displaying multiple files"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -205,14 +212,14 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Should see content from both files
         assert "Line 1" in captured.out
         # Should see separator between files
         assert "::::::::::::::" in captured.out
 
-    def test_more_broken_pipe(self, small_file, monkeypatch):
+    async def test_more_broken_pipe(self, small_file, monkeypatch):
         """Test handling of broken pipe"""
 
         def raise_broken_pipe(*args, **kwargs):
@@ -234,10 +241,10 @@ class TestMore:
             lines=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await run(args)
         assert exc_info.value.code == 141
 
-    def test_more_keyboard_interrupt(self, small_file, monkeypatch):
+    async def test_more_keyboard_interrupt(self, small_file, monkeypatch):
         """Test handling of keyboard interrupt"""
         call_count = {"count": 0}
 
@@ -262,10 +269,10 @@ class TestMore:
             lines=None,
         )
         with pytest.raises(SystemExit) as exc_info:
-            run(args)
+            await run(args)
         assert exc_info.value.code == 130
 
-    def test_more_local_file(self, basic_file, capsys, monkeypatch):
+    async def test_more_local_file(self, basic_file, capsys, monkeypatch):
         """Test more with local file (previously cloud file test)"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -281,11 +288,11 @@ class TestMore:
             plain=False,
             lines=10,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
 
-    def test_more_empty_file(self, workdir, capsys, monkeypatch):
+    async def test_more_empty_file(self, workdir, capsys, monkeypatch):
         """Test more with empty file"""
         empty_file = workdir / "empty.txt"
         empty_file.write_text("")
@@ -304,7 +311,7 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         # Empty file should produce no output (or minimal output)
         assert len(captured.out) < 10  # Very minimal output
@@ -330,7 +337,7 @@ class TestMore:
         assert b"Line 1" in captured.out.encode()
         assert b"Line 2" in captured.out.encode()
 
-    def test_more_no_newline_at_end(self, no_newline_file, capsys, monkeypatch):
+    async def test_more_no_newline_at_end(self, no_newline_file, capsys, monkeypatch):
         """Test handling of files without trailing newline"""
         mock_stdin = MockStdin(b"", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -346,13 +353,13 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "Line 1" in captured.out
         assert "Line 2" in captured.out
         assert "Line 3" in captured.out
 
-    def test_more_default_to_stdin(self, capsys, monkeypatch):
+    async def test_more_default_to_stdin(self, capsys, monkeypatch):
         """Test that more defaults to stdin when no files specified"""
         mock_stdin = MockStdin(b"stdin content\n", is_tty=False)
         monkeypatch.setattr("sys.stdin", mock_stdin)
@@ -368,6 +375,6 @@ class TestMore:
             plain=False,
             lines=None,
         )
-        run(args)
+        await run(args)
         captured = capsys.readouterr()
         assert "stdin content" in captured.out
