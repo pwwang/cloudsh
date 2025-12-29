@@ -8,7 +8,7 @@ packages = [{ include = "cloudsh" }]
 [tool.poetry.dependencies]
 python = "^3.9"
 panpath = "^0.4"
-argx = "^0.3"
+argx = "^0.4"
 python-simpleconf = {version = "^0.7", extras = ["toml"]}
 aiofiles = "^23.0.0"
 python-dateutil = "^2.9.0.post0"

@@ -265,21 +265,21 @@ test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
 
 [[package]]
 name = "argx"
-version = "0.3.3"
+version = "0.4.0"
 description = "Super-charged argparse for python"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "argx-0.3.3-py3-none-any.whl", hash = "sha256:92816987c00dc9a77d389aa7b9174fc3255f042b69fc56236c628ec8d0845329"},
-    {file = "argx-0.3.3.tar.gz", hash = "sha256:ecaae92b567dce8c4c88d8ec912f0949324885885e9983388dfdba2427cd81f7"},
+    {file = "argx-0.4.0-py3-none-any.whl", hash = "sha256:0856b7af4728a6c6d21162172612ef3a316a44eafe41859b94adba1d6d2e2676"},
+    {file = "argx-0.4.0.tar.gz", hash = "sha256:20892280b7386ab540f0e39a4c380cbef53a899d8b3c79c9528c79e7e7c560c2"},
 ]
 
 [package.dependencies]
 python-simpleconf = ">=0.7,<0.8"
 
 [package.extras]
-anypath = ["cloudpathlib (>=0.21,<0.22)"]
+anypath = ["panpath (>=0.4,<0.5)"]
 
 [[package]]
 name = "async-timeout"
@@ -1439,14 +1439,14 @@ files = [
 
 [[package]]
 name = "panpath"
-version = "0.4.4"
+version = "0.4.5"
 description = "Universal sync/async local/cloud path library with pathlib-compatible interface"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "panpath-0.4.4-py3-none-any.whl", hash = "sha256:a295f012be0b66fad0ca344d17833e65f2ed61c044a24582aa772fc30933f4b4"},
-    {file = "panpath-0.4.4.tar.gz", hash = "sha256:48121190c54ce2914be3ffc63c122893b9c7799a0b84678e564e5993e1eee965"},
+    {file = "panpath-0.4.5-py3-none-any.whl", hash = "sha256:6dd02efa613a99266fac4600e1eb9086aaaa966c9f09cf0f3d61e7ecb253746f"},
+    {file = "panpath-0.4.5.tar.gz", hash = "sha256:2e2613dd788e7f137df74df3bd80f1c0644d8a62fbd8573ff8d66f4e3a56333f"},
 ]
 
 [package.dependencies]
@@ -2360,4 +2360,4 @@ s3 = ["aioboto3"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "51bf94cbd42552cbfbde9cb496596a978d78c0b8206de2ffffca2c1c5c3c2aa4"
+content-hash = "fb103d327772bbe8016570bf018bd164e1d7dd1d6e2b95eb12b78bdc7e8746af"
