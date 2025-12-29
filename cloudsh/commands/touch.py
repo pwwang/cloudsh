@@ -80,12 +80,10 @@ async def run(args: Namespace) -> None:
                 if not exists:
                     await path.a_touch()
                 if mtime is not None:
-                    # Update cloud file metadata
-                    blob = path.client.client.bucket(path.bucket).get_blob(path.blob)
-                    metadata = blob.metadata or {}
-                    metadata["updated"] = datetime.fromtimestamp(mtime)
-                    blob.metadata = metadata
-                    blob.patch()
+                    await path.async_client.set_metadata(
+                        str(path),
+                        {"updated": mtime},
+                    )
             else:
                 # Local files support both atime and mtime
                 if not exists:
