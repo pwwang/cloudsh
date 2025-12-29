@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from typing import TYPE_CHECKING
-from panpath import PanPath
+from panpath import PanPath, LocalPath
 
 from ..utils import PACKAGE
 
@@ -38,7 +38,20 @@ async def _move_path(src: PanPath, dst: PanPath, args: Namespace) -> None:
         if await d.a_is_dir():
             d = d / s.name
 
-        await s.a_rename(d)
+        if isinstance(s, LocalPath) and not isinstance(d, LocalPath):
+            # local to cloud move
+            if await s.a_is_dir():
+                await d.a_mkdir(parents=True, exist_ok=True)
+                async for item in s.a_iterdir():
+                    dest_item = d / item.name
+                    await _mv(item, dest_item)
+                await s.a_rmtree()
+            else:
+                await d.a_write_bytes(await s.a_read_bytes())
+                await s.a_unlink()
+        else:
+            # cloud paths support move/rename to cloud/local
+            await s.a_rename(d)
 
         if args.verbose:
             print(f"renamed '{s}' -> '{d}'")

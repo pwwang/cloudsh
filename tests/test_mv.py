@@ -569,7 +569,7 @@ class TestMv:
         assert await (dst_dir / "file1.txt").a_exists()
         assert await (dst_dir / "subdir" / "file2.txt").a_exists()
 
-    async def test_mv_local_to_cloud_dir(self, tmp_path, workdir):
+    async def test_mv_local_to_cloud_dir(self, tmp_path, cloud_workdir):
         """Test moving local directory to cloud directory"""
         src_dir = PanPath(tmp_path) / "src_local"
         await src_dir.a_mkdir()
@@ -577,7 +577,7 @@ class TestMv:
         await (src_dir / "subdir").a_mkdir()
         await (src_dir / "subdir" / "file2.txt").a_write_text("content2")
 
-        dst_dir = workdir / "dst_cloud"
+        dst_dir = cloud_workdir / "dst_cloud"
 
         args = Namespace(
             u=False,
