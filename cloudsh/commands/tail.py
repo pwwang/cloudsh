@@ -15,13 +15,12 @@ from __future__ import annotations
 
 import asyncio
 import sys
-import time
 import threading
 import subprocess
 from queue import Queue, Empty as QueueEmpty
 from pathlib import Path
 from typing import TYPE_CHECKING
-from panpath import PanPath, CloudPath
+from panpath import PanPath, LocalPath
 from panpath.exceptions import NoStatError
 
 from ..utils import PACKAGE, parse_number
@@ -210,7 +209,7 @@ def _tail_local_file(args: Namespace, file: str) -> None:
 
 
 async def _follow_cloud_file(
-    path: CloudPath | Path,
+    path: Path,
     args: Namespace,
     output_queue: Queue,
     filename: Optional[str] = None,
@@ -239,18 +238,9 @@ async def _follow_cloud_file(
     """
     last_size = 0
 
-    # For local files, get initial content without printing
-    if isinstance(path, Path):
-        try:
-            last_size = await path.a_stat().st_size
-        except FileNotFoundError:
-            if not args.retry:
-                return
-            last_size = 0
-
     while True:
         try:
-            size = await path.a_stat().st_size
+            size = (await path.a_stat()).st_size
             if size > last_size:
                 async with path.a_open("rb") as fh:
                     await fh.seek(last_size)
@@ -396,11 +386,11 @@ async def run(args: Namespace) -> None:
                 if file == "-":
                     # Use GNU tail directly for stdin
                     _tail_local_file(args, file)
-                elif isinstance(path, Path):
+                elif isinstance(path, LocalPath):
                     if not args.follow:
                         _tail_local_file(args, file)
                     else:
-                        if not path.exists():
+                        if not await path.a_exists():
                             if not args.retry:
                                 print(
                                     f"{PACKAGE} tail: {file}: "
@@ -409,8 +399,8 @@ async def run(args: Namespace) -> None:
                                 )
                                 sys.exit(1)
                             # Retry mode: Wait for file to appear
-                            while not path.exists():
-                                time.sleep(1)
+                            while not await path.a_exists():
+                                await asyncio.sleep(1)
                         # Follow local file in a thread for multiple files
                         thread = threading.Thread(
                             target=_follow_local_file,
@@ -435,14 +425,14 @@ async def run(args: Namespace) -> None:
                                 sys.exit(1)
                             # Retry mode: Wait for file to appear
                             while not await path.a_exists():
-                                time.sleep(1)
-                        thread = threading.Thread(
-                            target=_follow_cloud_file,
-                            args=(path, args, output_queue, str(path)),
+                                await asyncio.sleep(1)
+
+                        await _follow_cloud_file(
+                            path,
+                            args,
+                            output_queue,
+                            str(path),
                         )
-                        thread.daemon = True
-                        thread.start()
-                        follow_threads.append(thread)
 
             except (OSError, IOError) as e:
                 print(f"{PACKAGE} tail: {file}: {str(e)}", file=sys.stderr)
@@ -453,7 +443,7 @@ async def run(args: Namespace) -> None:
         if follow_threads:
             try:
                 while True:
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
             except KeyboardInterrupt:
                 pass
 
