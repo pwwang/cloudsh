@@ -12,12 +12,18 @@ class TestSink:
     def setup_method(self):
         """Set up test input data"""
         self._orig_stdin = sys.stdin
+        content = [b"test content"]
         sys.stdin = type(
             "MockStdin",
             (),
             {
                 "buffer": type(
-                    "MockBuffer", (), {"read": lambda _: b"test content"}
+                    "MockBuffer",
+                    (),
+                    {
+                        "read": lambda _: b"test content",
+                        "readline": lambda _: content.pop(0) if content else b"",
+                    },
                 )(),
                 "isatty": lambda _: False,  # Add isatty method
             },
@@ -33,6 +39,7 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=False,
+            chunk_size=1024,
         )
         await run(args)
         assert outfile.read_text() == "test content"
@@ -43,6 +50,7 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=False,
+            chunk_size=1024,
         )
         await run(args)
         assert outfile.read_text() == "test content"
@@ -55,6 +63,7 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=True,
+            chunk_size=1024,
         )
         await run(args)
         assert outfile.read_text() == "existing\ntest content"
@@ -67,18 +76,25 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=True,
+            chunk_size=1024,
         )
         await run(args)
         assert outfile.read_text() == "existing\ntest content"
 
     async def test_sink_binary(self, tmp_path):
         """Test sinking binary content"""
+        content = [b"binary\x00data"]
         sys.stdin = type(
             "MockStdin",
             (),
             {
                 "buffer": type(
-                    "MockBuffer", (), {"read": lambda _: b"binary\x00data"}
+                    "MockBuffer",
+                    (),
+                    {
+                        "read": lambda _: b"binary\x00data",
+                        "readline": lambda _: content.pop(0) if content else b"",
+                    },
                 )(),
                 "isatty": lambda _: False,  # Add isatty method
             },
@@ -101,6 +117,7 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=False,
+            chunk_size=1024,
         )
         with pytest.raises(SystemExit):
             await run(args)
@@ -113,6 +130,7 @@ class TestSink:
         args = Namespace(
             file=str(outfile),
             append=False,
+            chunk_size=1024,
         )
         with pytest.raises(SystemExit):
             await run(args)
@@ -125,7 +143,14 @@ class TestSink:
             "MockStdin",
             (),
             {
-                "buffer": type("MockBuffer", (), {"read": lambda _: b""})(),
+                "buffer": type(
+                    "MockBuffer",
+                    (),
+                    {
+                        "read": lambda _: b"",
+                        "readline": lambda _: b"",
+                    },
+                )(),
                 "isatty": lambda _: True,  # Add isatty method
             },
         )()
@@ -133,6 +158,7 @@ class TestSink:
         args = Namespace(
             file="output.txt",
             append=False,
+            chunk_size=1024,
         )
         with pytest.raises(SystemExit):
             await run(args)

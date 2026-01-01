@@ -14,3 +14,10 @@ help = "Target file path (local or cloud)"
 flags = ["-a", "--append"]
 help = "Append to file instead of replacing"
 action = "store_true"
+
+[[arguments]]
+flags = ["-s", "--chunk-size"]
+metavar = "SIZE"
+help = "Chunk size for uploading to cloud storage (in bytes)"
+type = "int"
+default = 4096
