@@ -164,9 +164,9 @@ cloudsh complete --update-cache --depth 2 gs://my-bucket
 [7]: https://img.shields.io/github/actions/workflow/status/pwwang/cloudsh/build.yml
 [8]: https://img.shields.io/codacy/coverage/bb84185297244aefa6de4d675206a1cf?style=flat-square
 [9]: https://app.codacy.com/gh/pwwang/cloudsh/dashboard
-[10]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.google-cloud-storage.version&prefix=version%3A&style=flat-square&label=google-cloud-storage
+[10]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22project.optional-dependencies%22.gcs%5B0%5D&prefix=requires%3A&style=flat-square&label=gcloud-aio-storage
 [11]: https://googleapis.dev/python/storage/latest/index.html
-[12]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.boto3.version&prefix=version%3A&style=flat-square&label=boto3
+[12]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22project.optional-dependencies%22.aws%5B0%5D&prefix=requires%3A&style=flat-square&label=aioboto3
 [13]: https://pypi.org/project/boto3/
-[14]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22tool.poetry.dependencies%22.azure-storage-blob.version&prefix=version%3A&style=flat-square&label=azure-storage-blob
+[14]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpwwang%2Fcloudsh%2Fmaster%2Fpyproject.toml&query=%24.%22project.optional-dependencies%22.azure%5B0%5D&prefix=requires%3A&style=flat-square&label=azure-storage-blob
 [15]: https://pypi.org/project/azure-storage-blob/

@@ -63,7 +63,7 @@ def run(args: Namespace) -> None:
 
 ## Dependencies and Build
 
-- **Package manager**: Poetry (`pyproject.toml`), but generates `setup.py` for backward compatibility
+- **Package manager**: uv (`pyproject.toml`, `uv.lock`)
 - **Optional extras**: `[gcs]`, `[aws]`, `[azure]`, `[all]` for cloud provider SDKs
 - **Key dependencies**:
   - `argx`: Declarative argparse from configs
@@ -93,7 +93,7 @@ Cloud paths may return `None` for `st_uid`/`st_gid`/`st_mode`. Handle gracefully
 
 ```bash
 # Install with dev dependencies
-poetry install --all-extras
+uv sync --group dev --all-extras
 
 # Run tests (requires .env with cloud credentials)
 pytest
