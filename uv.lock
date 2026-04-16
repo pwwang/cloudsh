@@ -589,7 +589,7 @@ wheels = [
 
 [[package]]
 name = "cloudsh"
-version = "0.3.8"
+version = "0.3.9a1"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

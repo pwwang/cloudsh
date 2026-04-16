@@ -1,6 +1,6 @@
 [project]
 name = "cloudsh"
-version = "0.3.8"
+version = "0.3.9a1"
 description = "A Python CLI wrapping common Linux commands for local/cloud files."
 readme = "README.md"
 license = "MIT"
