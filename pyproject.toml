@@ -12,7 +12,8 @@ dependencies = [
     "python-simpleconf[toml]>=0.9,<0.10",
     "aiofiles>=23.0.0",
     "python-dateutil>=2.9.0.post0,<3",
-    "argcomplete>=3.5.3,<4",
+    "argcomplete>=3.5.3,<3.7; python_version < '3.10'",
+    "argcomplete>=3.5.3,<4; python_version >= '3.10'",
 ]
 
 [project.optional-dependencies]
